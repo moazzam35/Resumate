@@ -1,0 +1,471 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id              String    @id @default(cuid())
+  name            String
+  email           String    @unique
+  password        String?
+  avatar          String?
+  role            Role      @default(USER)
+  bio             String?
+  phone           String?
+  location        String?
+  github          String?
+  linkedin        String?
+  portfolio       String?
+  emailVerified   DateTime?
+  notificationPrefs Json?   @default("{\"email\":true,\"marketing\":false,\"updates\":true}")
+  provider        String    @default("credentials")
+  providerId      String?
+  suspended       Boolean   @default(false)
+  disableLogin    Boolean   @default(false)
+  isTest          Boolean   @default(false)
+  lastLoginAt     DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  resumes         Resume[]
+  templateFavorites TemplateFavorite[]
+  coverLetters    CoverLetter[]
+  aiHistories     AIHistory[]
+  atsResults      AtsResult[]
+  notifications   Notification[]
+  sessions        Session[]
+  subscription    Subscription?
+  loginHistory    LoginHistory[]
+  auditLogs       AuditLog[]
+
+  @@map("users")
+}
+
+model LoginHistory {
+  id        String   @id @default(cuid())
+  userId    String
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("login_history")
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  adminId     String
+  action      String
+  targetUser  String?
+  targetEmail String?
+  details     Json?
+  ipAddress   String?
+  createdAt   DateTime @default(now())
+
+  admin       User     @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@index([adminId])
+  @@map("audit_logs")
+}
+
+model Session {
+  id            String   @id @default(cuid())
+  userId        String
+  token         String   @unique
+  userAgent     String?
+  ipAddress     String?
+  expiresAt     DateTime
+  createdAt     DateTime @default(now())
+
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+model Subscription {
+  id             String    @id @default(cuid())
+  userId         String    @unique
+  plan           Plan      @default(FREE)
+  stripeId       String?
+  startDate      DateTime  @default(now())
+  endDate        DateTime?
+  renewalDate    DateTime?
+  isActive       Boolean   @default(true)
+  aiCreditsUsed  Int       @default(0)
+  aiCreditResetAt DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("subscriptions")
+}
+
+model Resume {
+  id              String   @id @default(cuid())
+  userId          String
+  title           String
+  slug            String
+  template        String   @default("modern")
+  colorTheme      String   @default("#2563eb")
+  status          ResumeStatus @default(DRAFT)
+  aiScore         Int?
+  atsScore        Int?
+  isPublic        Boolean  @default(false)
+  personalInfo    Json?
+  summary         String?
+  design          Json?
+  version         Int      @default(1)
+  lastAutosave    DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  experiences     Experience[]
+  educations      Education[]
+  skills          Skill[]
+  projects        Project[]
+  certificates    Certificate[]
+  languages       Language[]
+  achievements    Achievement[]
+  sectionOrder    SectionOrder[]
+  versionHistory  VersionHistory[]
+  aiHistories     AIHistory[]
+  atsResults      AtsResult[]
+
+  @@unique([userId, slug])
+  @@index([userId, updatedAt])
+  @@map("resumes")
+}
+
+model Experience {
+  id            String   @id @default(cuid())
+  resumeId      String
+  company       String
+  position      String
+  location      String?
+  type          String?
+  startDate     DateTime
+  endDate       DateTime?
+  isCurrent     Boolean  @default(false)
+  description   String?
+  highlights    String[]
+  order         Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  resume        Resume   @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+
+  @@index([resumeId])
+  @@map("experiences")
+}
+
+model Education {
+  id            String   @id @default(cuid())
+  resumeId      String
+  institution   String
+  degree        String
+  field         String?
+  location      String?
+  startDate     DateTime
+  endDate       DateTime?
+  isCurrent     Boolean  @default(false)
+  gpa           String?
+  highlights    String[]
+  order         Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  resume        Resume   @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+
+  @@index([resumeId])
+  @@map("educations")
+}
+
+model Skill {
+  id            String   @id @default(cuid())
+  resumeId      String
+  name          String
+  category      String?
+  level         SkillLevel @default(INTERMEDIATE)
+  order         Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  resume        Resume   @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+
+  @@index([resumeId])
+  @@map("skills")
+}
+
+model Project {
+  id            String   @id @default(cuid())
+  resumeId      String
+  name          String
+  description   String?
+  url           String?
+  github        String?
+  technologies  String[]
+  highlights    String[]
+  startDate     DateTime?
+  endDate       DateTime?
+  order         Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  resume        Resume   @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+
+  @@index([resumeId])
+  @@map("projects")
+}
+
+model Certificate {
+  id            String   @id @default(cuid())
+  resumeId      String
+  name          String
+  issuer        String
+  url           String?
+  date          DateTime?
+  order         Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  resume        Resume   @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+
+  @@index([resumeId])
+  @@map("certificates")
+}
+
+model Language {
+  id            String   @id @default(cuid())
+  resumeId      String
+  name          String
+  proficiency   LanguageProficiency @default(CONVERSATIONAL)
+  order         Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  resume        Resume   @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+
+  @@index([resumeId])
+  @@map("languages")
+}
+
+model Achievement {
+  id            String   @id @default(cuid())
+  resumeId      String
+  title         String
+  description   String?
+  date          DateTime?
+  url           String?
+  order         Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  resume        Resume   @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+
+  @@index([resumeId])
+  @@map("achievements")
+}
+
+model SectionOrder {
+  id            String   @id @default(cuid())
+  resumeId      String
+  section       String
+  order         Int
+  isVisible     Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  resume        Resume   @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+
+  @@unique([resumeId, section])
+  @@map("section_orders")
+}
+
+model VersionHistory {
+  id            String   @id @default(cuid())
+  resumeId      String
+  version       Int
+  data          Json
+  createdAt     DateTime @default(now())
+
+  resume        Resume   @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+
+  @@index([resumeId])
+  @@map("version_history")
+}
+
+model CoverLetter {
+  id            String   @id @default(cuid())
+  userId        String
+  title         String
+  slug          String
+  company       String?
+  position      String?
+  content       String
+  template      String   @default("professional")
+  status        CoverLetterStatus @default(DRAFT)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  aiHistories   AIHistory[]
+
+  @@index([userId])
+  @@unique([userId, slug])
+  @@map("cover_letters")
+}
+
+model ResumeTemplate {
+  id            String   @id @default(cuid())
+  name          String    @unique
+  slug          String    @unique
+  description   String
+  category      String
+  thumbnail     String
+  isPremium     Boolean   @default(false)
+  isActive      Boolean   @default(true)
+  config        Json?
+  order         Int       @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@map("resume_templates")
+}
+
+model AtsResult {
+  id             String   @id @default(cuid())
+  userId         String
+  resumeId       String?
+  resumeContent  String
+  jobDescription String
+  score          Int
+  data           Json
+  createdAt      DateTime @default(now())
+
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  resume         Resume?  @relation(fields: [resumeId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([resumeId])
+  @@map("ats_results")
+}
+
+model AIHistory {
+  id            String   @id @default(cuid())
+  userId        String
+  resumeId      String?
+  coverLetterId String?
+  type          AIType
+  input         String
+  output        String
+  model         String   @default("gemini-pro")
+  tokens        Int?
+  createdAt     DateTime @default(now())
+
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  resume        Resume?       @relation(fields: [resumeId], references: [id], onDelete: SetNull)
+  coverLetter   CoverLetter?  @relation(fields: [coverLetterId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([resumeId])
+  @@index([coverLetterId])
+  @@map("ai_histories")
+}
+
+model Notification {
+  id            String   @id @default(cuid())
+  userId        String
+  title         String
+  message       String
+  type          NotificationType @default(INFO)
+  isRead        Boolean  @default(false)
+  link          String?
+  createdAt     DateTime @default(now())
+
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead])
+  @@map("notifications")
+}
+
+enum Role {
+  USER
+  CLIENT
+  MODERATOR
+  ADMIN
+}
+
+enum Plan {
+  FREE
+  PRO
+  ENTERPRISE
+}
+
+enum ResumeStatus {
+  DRAFT
+  COMPLETED
+  PUBLISHED
+}
+
+enum SkillLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+  EXPERT
+}
+
+enum LanguageProficiency {
+  BASIC
+  CONVERSATIONAL
+  FLUENT
+  NATIVE
+  PROFESSIONAL
+}
+
+enum CoverLetterStatus {
+  DRAFT
+  COMPLETED
+}
+
+enum AIType {
+  SUMMARY
+  IMPROVE_EXPERIENCE
+  REWRITE_BULLETS
+  GENERATE_SKILLS
+  GENERATE_PROJECTS
+  GENERATE_ACHIEVEMENTS
+  COVER_LETTER
+  GRAMMAR_CHECK
+  ATS_KEYWORDS
+  RESUME_ANALYSIS
+  RESUME_SCORE
+  INTERVIEW_QUESTIONS
+  CAREER_SUGGESTIONS
+}
+
+enum NotificationType {
+  INFO
+  SUCCESS
+  WARNING
+  ERROR
+}
+
+model TemplateFavorite {
+  id         String   @id @default(cuid())
+  userId     String
+  templateId String
+  createdAt  DateTime @default(now())
+
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, templateId])
+  @@map("template_favorites")
+}

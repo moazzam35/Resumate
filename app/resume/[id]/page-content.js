@@ -1,38 +1,43 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft,
   ArrowRight,
-  Eye,
   Download,
   Check,
-  ChevronRight,
-  Sparkles,
   ZoomIn,
   ZoomOut,
-  RotateCcw,
   ShieldCheck,
   LayoutTemplate,
   AlertCircle,
-  Save,
-  Menu,
-  X,
   MoreVertical,
+  Trash2,
+  Copy,
+  Settings2,
+  CheckCircle2,
+  Loader2,
+  Sparkles,
+  List,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { Progress } from "@/components/ui/progress";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -42,8 +47,16 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useResumeStore, useUIStore } from "@/store";
-import { get, put, post } from "@/lib/api";
-import { cn, downloadResumePDF, checkResumeCompletion, getStepStatus, serializeResume } from "@/lib/utils";
+import { useIsKeyboardOpen } from "@/hooks";
+import { get, put, post, del } from "@/lib/api";
+import {
+  cn,
+  downloadResumePDF,
+  checkResumeCompletion,
+  getResumeSectionStatus,
+  getStepStatus,
+  serializeResume,
+} from "@/lib/utils";
 import { PersonalInfoStep } from "@/components/features/resume/personal-info-step";
 import { ExperienceStep } from "@/components/features/resume/experience-step";
 import { EducationStep } from "@/components/features/resume/education-step";
@@ -52,8 +65,10 @@ import { ProjectsStep } from "@/components/features/resume/projects-step";
 import { CertificatesStep } from "@/components/features/resume/certificates-step";
 import { LanguagesStep } from "@/components/features/resume/languages-step";
 import { AchievementsStep } from "@/components/features/resume/achievements-step";
+import { AtsScoreStep } from "@/components/features/resume/ats-score-step";
 import { ResumePreview } from "@/components/features/resume/resume-preview";
 import { ResumeCompletion } from "@/components/features/resume/resume-completion";
+import { ResumeCompleted } from "@/components/features/resume/resume-completed";
 import { AIAssistant } from "@/components/features/ai/ai-assistant";
 import { TemplatePicker } from "@/components/features/templates/template-picker";
 import { UpgradeModal } from "@/components/features/templates/upgrade-modal";
@@ -71,6 +86,7 @@ const steps = [
   { id: "certificates", label: "Certifications", component: CertificatesStep },
   { id: "languages", label: "Languages", component: LanguagesStep },
   { id: "achievements", label: "Achievements", component: AchievementsStep },
+  { id: "ats", label: "ATS Score", component: AtsScoreStep },
   { id: "preview", label: "Live Preview", component: ResumePreview },
 ];
 
@@ -88,22 +104,44 @@ export default function ResumeEditorPage() {
   const [pageCount, setPageCount] = useState(1);
   const [savedSnapshot, setSavedSnapshot] = useState(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [titleInput, setTitleInput] = useState("");
+  const [isPublicToggle, setIsPublicToggle] = useState(false);
+  const [aiAssistantOpen, setAiAssistantOpen] = useState(false);
+  const [finished, setFinished] = useState(false);
+  const isKeyboardOpen = useIsKeyboardOpen();
+
+  const stepBarRef = useRef(null);
+  const activeStepRef = useRef(null);
 
   const { currentResume, setCurrentResume, currentStep, setCurrentStep, lastSaved, setLastSaved, isSaving, setIsSaving } = useResumeStore();
   const showToast = useUIStore((s) => s.showToast);
 
-  const { complete: isResumeComplete, missing: missingSections } = checkResumeCompletion(currentResume);
+  const resumeCompletion = getResumeSectionStatus(currentResume);
+  const isResumeComplete = resumeCompletion.isReady;
+  const missingSections = resumeCompletion.missing;
+  const sectionStatus = resumeCompletion.status;
+  const completedCount = resumeCompletion.completed;
+  const totalSections = resumeCompletion.total;
 
   const stepStatuses = steps.map((step) => getStepStatus(currentResume, step.id));
   const currentValid = stepStatuses[currentStep]?.valid ?? false;
   const currentMissing = stepStatuses[currentStep]?.missing || [];
 
   const isFinalStep = currentStep === steps.length - 1;
-  const completedCount = steps.slice(0, -1).filter((step, index) => stepStatuses[index]?.valid).length;
   const hasUnsavedChanges = useMemo(() => {
     if (!currentResume || !savedSnapshot) return false;
     return JSON.stringify(serializeResume(currentResume)) !== JSON.stringify(serializeResume(savedSnapshot));
   }, [currentResume, savedSnapshot]);
+
+  const saveStatus = useMemo(() => {
+    if (isSaving) return { label: "Saving…", tone: "muted" };
+    if (hasUnsavedChanges) return { label: "Unsaved Changes", tone: "warning" };
+    if (lastSaved) return { label: "Saved", tone: "success" };
+    return { label: "Not saved yet", tone: "muted" };
+  }, [isSaving, hasUnsavedChanges, lastSaved]);
 
   useEffect(() => {
     async function fetchResume() {
@@ -195,6 +233,9 @@ export default function ResumeEditorPage() {
     if (!resumeId) return;
     setIsExporting(true);
     try {
+      // Persist any local design/template/title changes first, then pull the
+      // freshest server state so the PDF always reflects the exact latest
+      // resume data — never an older saved version.
       if (currentResume) {
         const payload = {
           title: currentResume.title,
@@ -202,37 +243,125 @@ export default function ResumeEditorPage() {
           colorTheme: currentResume.colorTheme,
           design: currentResume.design,
         };
-        const response = await put(`/resumes/${resumeId}`, payload);
-        const savedResume = response.resume || response;
-        setCurrentResume(savedResume);
-        setSavedSnapshot(savedResume);
-        setLastSaved(new Date());
+        await put(`/resumes/${resumeId}`, payload);
       }
-      await downloadResumePDF(resumeId, currentResume?.title);
+      const data = await get(`/resumes/${resumeId}`);
+      const latest = data.resume;
+      setCurrentResume(latest);
+      setSavedSnapshot(latest);
+      setLastSaved(new Date());
+      await downloadResumePDF(resumeId, latest?.title || currentResume?.title);
       showToast({ message: "PDF downloaded successfully", type: "success" });
     } catch (error) {
       showToast({ message: error.message || "Failed to export PDF", type: "error" });
     } finally {
       setIsExporting(false);
     }
-  }, [resumeId, currentResume, put, setCurrentResume, showToast]);
+  }, [resumeId, currentResume, setCurrentResume, setLastSaved, showToast]);
 
-  const handleSaveResume = useCallback(async () => {
-    if (!resumeId || !currentResume) return;
+  const handleSaveAndFinish = useCallback(async () => {
+    if (!resumeId) return;
     setIsSaving(true);
     try {
-      const response = await put(`/resumes/${resumeId}`, serializeResume(currentResume));
+      // Every section persists its changes to the server as you go, so pull
+      // the latest state before finishing — never mark completion with stale
+      // data in the store.
+      const data = await get(`/resumes/${resumeId}`);
+      const latest = data.resume;
+      setCurrentResume(latest);
+      setSavedSnapshot(latest);
+      setLastSaved(new Date());
+
+      // Validate completion before marking done. If incomplete, jump to the
+      // first missing section and explain what's left.
+      const { complete, missing } = checkResumeCompletion(latest);
+      if (!complete) {
+        const firstMissing = steps.findIndex(
+          (s, i) => i < steps.length - 1 && !getStepStatus(latest, s.id).valid
+        );
+        if (firstMissing >= 0) setCurrentStep(firstMissing);
+        showToast({
+          message: `Resume incomplete — missing: ${missing.join(", ")}`,
+          type: "error",
+        });
+        return;
+      }
+
+      // Save everything; the server computes and stores COMPLETED status.
+      const response = await put(`/resumes/${resumeId}`, serializeResume(latest));
       const savedResume = response.resume || response;
       setCurrentResume(savedResume);
       setSavedSnapshot(savedResume);
       setLastSaved(new Date());
-      showToast({ message: "Resume saved successfully", type: "success" });
+      setFinished(true);
+      showToast({ message: "Resume completed!", type: "success" });
     } catch (error) {
-      showToast({ message: error.message || "Failed to save resume", type: "error" });
+      showToast({ message: error.message || "Failed to finish resume", type: "error" });
     } finally {
       setIsSaving(false);
     }
-  }, [resumeId, currentResume, setCurrentResume, setLastSaved, showToast]);
+  }, [resumeId, setCurrentResume, setLastSaved, showToast]);
+
+  const handleDuplicate = useCallback(async () => {
+    try {
+      const response = await post(`/resumes/${resumeId}/duplicate`, {});
+      const newResume = response?.data || response?.resume || response;
+      showToast({ message: "Resume duplicated", type: "success" });
+      if (newResume?.id) {
+        router.push(`/resume/${newResume.id}`);
+      }
+    } catch (error) {
+      showToast({ message: error.message || "Failed to duplicate resume", type: "error" });
+    }
+  }, [resumeId, router, showToast]);
+
+  const handleDeleteResume = useCallback(async () => {
+    if (!resumeId) return;
+    setIsDeleting(true);
+    try {
+      await del(`/resumes/${resumeId}`);
+      showToast({ message: "Resume deleted", type: "success" });
+      router.push("/dashboard/resumes");
+    } catch (error) {
+      showToast({ message: error.message || "Failed to delete resume", type: "error" });
+      setIsDeleting(false);
+      setDeleteOpen(false);
+    }
+  }, [resumeId, router, showToast]);
+
+  const handleOpenSettings = useCallback(() => {
+    setTitleInput(currentResume?.title || "");
+    setIsPublicToggle(Boolean(currentResume?.isPublic));
+    setSettingsOpen(true);
+  }, [currentResume]);
+
+  const handleSaveSettings = useCallback(async () => {
+    const nextTitle = (titleInput || "").trim();
+    if (!nextTitle) {
+      showToast({ message: "Resume name can't be empty", type: "error" });
+      return;
+    }
+    try {
+      const response = await put(`/resumes/${resumeId}`, {
+        title: nextTitle,
+        isPublic: isPublicToggle,
+      });
+      const savedResume = response?.resume || response;
+      if (savedResume) {
+        setCurrentResume(savedResume);
+        setSavedSnapshot(savedResume);
+      } else {
+        setCurrentResume((prev) =>
+          prev ? { ...prev, title: nextTitle, isPublic: isPublicToggle } : prev
+        );
+      }
+      setLastSaved(new Date());
+      setSettingsOpen(false);
+      showToast({ message: "Settings saved", type: "success" });
+    } catch (error) {
+      showToast({ message: error.message || "Failed to save settings", type: "error" });
+    }
+  }, [resumeId, titleInput, isPublicToggle, setCurrentResume, setLastSaved, showToast]);
 
   const handleOpenTemplatePicker = useCallback(() => {
     setPickerTab("templates");
@@ -245,6 +374,7 @@ export default function ResumeEditorPage() {
   }, []);
 
   const handleEditResume = useCallback(() => {
+    setFinished(false);
     setCurrentStep(0);
   }, []);
 
@@ -462,6 +592,21 @@ export default function ResumeEditorPage() {
     handleGenerateTool({ tool: "ATS_KEYWORDS" });
   }, [handleGenerateTool]);
 
+  const handleAtsChecked = useCallback(
+    async (result) => {
+      const score = typeof result?.score === "number" ? result.score : null;
+      if (score == null) return;
+      const current = useResumeStore.getState().currentResume;
+      if (current) setCurrentResume({ ...current, atsScore: score });
+      try {
+        await put(`/resumes/${resumeId}`, { atsScore: score });
+      } catch {
+        // persistence is best-effort; the score still shows live in the badge
+      }
+    },
+    [resumeId, setCurrentResume]
+  );
+
   const handleRequestHandled = useCallback(() => {
     setAiRequest(null);
   }, []);
@@ -475,11 +620,87 @@ export default function ResumeEditorPage() {
     return () => window.removeEventListener("keydown", onKey);
   }, [drawerOpen]);
 
-  const totalSections = steps.length - 1;
-  const progressPct = totalSections > 0 ? Math.round((completedCount / totalSections) * 100) : 0;
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 767px)");
+    if (!mq.matches) return;
+    const handleFocusIn = (e) => {
+      const target = e.target;
+      if (!target || typeof target.scrollIntoView !== "function") return;
+      const tag = target.tagName;
+      if (!["INPUT", "TEXTAREA", "SELECT"].includes(tag)) return;
+      requestAnimationFrame(() => {
+        target.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      });
+    };
+    document.addEventListener("focusin", handleFocusIn);
+    return () => document.removeEventListener("focusin", handleFocusIn);
+  }, []);
+
+  // Keep the active step pill visible inside the horizontally scrollable
+  // mobile step bar without ever widening the page.
+  useEffect(() => {
+    const bar = stepBarRef.current;
+    const pill = activeStepRef.current;
+    if (!bar || !pill) return;
+    const barRect = bar.getBoundingClientRect();
+    const pillRect = pill.getBoundingClientRect();
+    if (pillRect.left < barRect.left || pillRect.right > barRect.right) {
+      bar.scrollTo({
+        left: pill.offsetLeft - (bar.clientWidth - pill.clientWidth) / 2,
+        behavior: "smooth",
+      });
+    }
+  }, [currentStep]);
+
+  const handlePreviewCompleted = useCallback(() => {
+    const el = document.getElementById("resume-completed-preview");
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, []);
+
+  const handleMobileExport = useCallback(() => {
+    if (!isResumeComplete) {
+      showToast({
+        message: `Complete all required sections to export PDF${
+          missingSections.length ? ` — missing: ${missingSections.join(", ")}` : ""
+        }`,
+        type: "error",
+      });
+      return;
+    }
+    handleExportPDF();
+  }, [isResumeComplete, missingSections, showToast, handleExportPDF]);
+
+  const progressPct = resumeCompletion.percentage;
+
+  // A sidebar step shows a checkmark only when it has REAL content. ATS Score
+  // and Live Preview are not content sections and never get a content check.
+  const getSectionComplete = (stepId) => {
+    switch (stepId) {
+      case "personal":
+        return sectionStatus.personal;
+      case "experience":
+        return sectionStatus.experience;
+      case "education":
+        return sectionStatus.education;
+      case "skills":
+        return sectionStatus.skills;
+      case "projects":
+        return sectionStatus.projects;
+      case "certificates":
+        return sectionStatus.certificates;
+      case "languages":
+        return sectionStatus.languages;
+      case "achievements":
+        return sectionStatus.achievements;
+      default:
+        return false;
+    }
+  };
 
   const renderStepItem = (step, index, onSelect) => {
-    const isCompleted = index < currentStep;
+    const isCompleted = getSectionComplete(step.id);
     const isCurrent = index === currentStep;
     const isLocked =
       index > currentStep && !(index === currentStep + 1 && currentValid);
@@ -526,11 +747,60 @@ export default function ResumeEditorPage() {
     );
   };
 
+  // Compact pill used by the horizontally scrollable mobile step bar.
+  const renderStepPill = (step, index) => {
+    const isCompleted = getSectionComplete(step.id);
+    const isCurrent = index === currentStep;
+    const isLocked =
+      index > currentStep && !(index === currentStep + 1 && currentValid);
+    return (
+      <button
+        key={step.id}
+        type="button"
+        ref={isCurrent ? activeStepRef : undefined}
+        onClick={() => {
+          if (!isLocked) setCurrentStep(index);
+        }}
+        disabled={isLocked}
+        aria-current={isCurrent ? "step" : undefined}
+        title={
+          isLocked
+            ? "Complete the current section to unlock this step"
+            : step.label
+        }
+        className={cn(
+          "flex min-h-11 shrink-0 items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors",
+          isCurrent
+            ? "border-stamp bg-stamp text-paper shadow-sm"
+            : isCompleted
+            ? "border-emerald-500/40 bg-emerald-500/5 text-emerald-600"
+            : isLocked
+            ? "border-border text-muted-foreground opacity-40"
+            : "border-border text-muted-foreground hover:bg-secondary"
+        )}
+      >
+        <span
+          className={cn(
+            "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-[10px] font-bold",
+            isCurrent
+              ? "border-paper bg-paper text-stamp"
+              : isCompleted
+              ? "border-emerald-500 bg-emerald-500/10 text-emerald-500"
+              : "border-border"
+          )}
+        >
+          {isCompleted ? <Check className="h-3 w-3" /> : index + 1}
+        </span>
+        <span className="whitespace-nowrap">{step.label}</span>
+      </button>
+    );
+  };
+
   const StepComponent = steps[currentStep]?.component;
 
   if (isLoading) {
     return (
-      <div className="flex h-screen flex-col bg-background overflow-hidden">
+      <div className="flex h-[100dvh] flex-col bg-background overflow-hidden">
         <header className="flex h-14 items-center justify-between border-b border-border bg-card px-4 z-30 shrink-0">
           <div className="flex items-center gap-3">
             <Skeleton className="h-4 w-20" />
@@ -553,7 +823,7 @@ export default function ResumeEditorPage() {
 
           <main className="flex-1 overflow-hidden bg-surface p-4 sm:p-6">
             <div className="mx-auto max-w-3xl">
-              <div className="rounded-2xl border border-border bg-card p-6 space-y-5">
+              <div className="md:rounded-2xl md:border md:border-border md:bg-card md:p-6 md:shadow-xs space-y-5">
                 <div className="space-y-2">
                   <Skeleton className="h-6 w-48" />
                   <Skeleton className="h-3 w-64" />
@@ -580,19 +850,20 @@ export default function ResumeEditorPage() {
   }
 
   return (
-    <div className="flex h-screen flex-col bg-background overflow-hidden">
+    <div className="flex h-[100dvh] flex-col bg-background overflow-hidden w-full max-w-full">
       {/* STUDIO TOOLBAR HEADER */}
-      <header className="flex h-12 shrink-0 items-center justify-between border-b border-border bg-card px-2 sm:px-3 z-30 md:h-14 md:px-4">
-        <div className="flex min-w-0 items-center gap-2 md:gap-3">
+      <header className="relative z-20 flex h-14 shrink-0 items-center justify-between border-b border-border bg-card px-2 sm:px-3 md:px-4 w-full max-w-full">
+        <div className="flex min-w-0 items-center gap-1.5 md:gap-3">
           <Link
             href="/dashboard/resumes"
-            aria-label="Back to Dashboard"
+            aria-label="Back to My Resumes"
             className="flex shrink-0 items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors"
           >
-            <ArrowLeft className="h-4 w-4 md:h-3.5 md:w-3.5" />
+            <ArrowLeft className="h-5 w-5 md:h-4 md:w-4" />
             <span className="hidden md:inline">Dashboard</span>
+            <span className="md:hidden">My Resumes</span>
           </Link>
-          <div className="h-4 w-px shrink-0 bg-border" />
+          <div className="h-4 w-px shrink-0 bg-border hidden md:block" />
           <span className="min-w-0 truncate text-xs font-bold text-foreground">
             {currentResume?.title || "Untitled Resume"}
           </span>
@@ -607,7 +878,7 @@ export default function ResumeEditorPage() {
           </Badge>
         </div>
 
-        {/* CONTROLS & SAVE */}
+        {/* CONTROLS */}
         <div className="flex shrink-0 items-center gap-1.5 md:gap-2">
           {/* ZOOM CONTROLS — desktop only */}
           <div className="hidden md:flex items-center rounded-xl border border-border bg-secondary/50 p-1 text-xs">
@@ -648,108 +919,118 @@ export default function ResumeEditorPage() {
             </span>
           )}
 
-          {/* SAVE — mobile only */}
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-10 px-3 md:hidden"
-            onClick={handleSaveResume}
-            loading={isSaving}
-            leftIcon={Save}
-          >
-            <span>Save</span>
-          </Button>
-
-          {/* EXPORT PDF — mobile (toast when incomplete) */}
-          <Button
-            size="sm"
-            variant="primary"
-            className="h-10 px-3 md:hidden"
-            disabled={isExporting}
-            loading={isExporting}
-            leftIcon={Download}
-            onClick={() => {
-              if (!isResumeComplete) {
-                showToast({
-                  message: `Complete all required sections to export PDF${
-                    missingSections.length ? ` — missing: ${missingSections.join(", ")}` : ""
-                  }`,
-                  type: "error",
-                });
-                return;
-              }
-              handleExportPDF();
-            }}
-          >
-            <span>Export PDF</span>
-          </Button>
-
           {/* MORE MENU — mobile only */}
           <div className="md:hidden">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-10 w-10" aria-label="More options">
-                  <MoreVertical className="h-4 w-4" />
+                <Button variant="ghost" size="icon" className="h-11 w-11" aria-label="More options">
+                  <MoreVertical className="h-5 w-5" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="min-w-[190px]">
+              <DropdownMenuContent align="end" className="min-w-[220px]">
                 <DropdownMenuLabel>Options</DropdownMenuLabel>
+                <div className="flex items-center gap-2 px-2 py-1.5 text-sm">
+                  {isSaving ? (
+                    <Loader2 className="h-4 w-4 shrink-0 animate-spin text-muted-foreground" />
+                  ) : saveStatus.tone === "success" ? (
+                    <CheckCircle2 className="h-4 w-4 shrink-0 text-success" />
+                  ) : (
+                    <AlertCircle className="h-4 w-4 shrink-0 text-warning" />
+                  )}
+                  <span
+                    className={cn(
+                      "font-medium",
+                      saveStatus.tone === "success"
+                        ? "text-success"
+                        : saveStatus.tone === "warning"
+                        ? "text-warning"
+                        : "text-muted-foreground"
+                    )}
+                  >
+                    {saveStatus.label}
+                  </span>
+                </div>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleMobileExport} disabled={isExporting}>
+                  <Download />
+                  Export PDF
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleOpenTemplatePicker}>
                   <LayoutTemplate />
-                  Templates & Design
+                  Change Template
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleRunAtsCheck}>
                   <ShieldCheck />
-                  Run ATS check
+                  ATS Score
                 </DropdownMenuItem>
-                {lastSaved && (
-                  <>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem disabled>
-                      Saved {lastSaved.toLocaleTimeString()}
-                    </DropdownMenuItem>
-                  </>
-                )}
+                <DropdownMenuItem onClick={handleOpenSettings}>
+                  <Settings2 />
+                  Resume Settings
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem disabled>
-                  {currentResume?.atsScore != null
-                    ? `ATS Score: ${currentResume.atsScore}%`
-                    : "ATS Score: Not scored"}
+                <DropdownMenuItem onClick={handleDuplicate}>
+                  <Copy />
+                  Duplicate Resume
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => setDeleteOpen(true)}
+                  className="text-destructive"
+                >
+                  <Trash2 />
+                  Delete Resume
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-
-          {/* EXPORT PDF — desktop (tooltip when incomplete) */}
-          <div className="hidden md:block">
-            {isResumeComplete ? (
-              <Button size="sm" variant="primary" onClick={handleExportPDF} disabled={isExporting} loading={isExporting} leftIcon={Download}>
-                <span>Export PDF</span>
-              </Button>
-            ) : (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button size="sm" variant="primary" disabled leftIcon={Download}>
-                      <span>Export PDF</span>
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Complete all required sections to enable PDF export</p>
-                    {missingSections.length > 0 && (
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Missing: {missingSections.join(", ")}
-                      </p>
-                    )}
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            )}
-          </div>
         </div>
       </header>
 
-      {/* STUDIO THREE-COLUMN WORKSPACE */}
+      {/* MOBILE STEP NAVIGATION — horizontally scrollable, never widens the page */}
+      {!finished && (
+        <div className="border-b border-border bg-card md:hidden">
+          <div
+            ref={stepBarRef}
+            className="scrollbar-hide flex items-center gap-1.5 overflow-x-auto px-3 py-2"
+          >
+            {steps.map((step, index) => renderStepPill(step, index))}
+            <button
+              type="button"
+              onClick={() => setDrawerOpen(true)}
+              aria-label="Show all sections"
+              className="flex h-11 shrink-0 items-center gap-1.5 rounded-full border border-border px-3 text-xs font-semibold text-muted-foreground hover:bg-secondary"
+            >
+              <List className="h-4 w-4 shrink-0" />
+              <span className="whitespace-nowrap">All</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* COMPLETED STATE — polished finish view replaces the studio workspace */}
+      {finished ? (
+        <main className="min-w-0 flex-1 overflow-y-auto bg-surface px-4 pb-16 pt-6 sm:px-6 md:pb-10">
+          <div className="mx-auto max-w-4xl">
+            <ResumeCompleted
+              resume={currentResume}
+              isExporting={isExporting}
+              isComplete={isResumeComplete}
+              hasUnsavedChanges={hasUnsavedChanges}
+              missingSections={missingSections}
+              onPreview={handlePreviewCompleted}
+              onExport={handleExportPDF}
+              onEdit={handleEditResume}
+            />
+            <div id="resume-completed-preview" className="mt-8 scroll-mt-4">
+              <ResumePreview
+                resume={currentResume}
+                resumeId={resumeId}
+                onPageCountChange={setPageCount}
+              />
+            </div>
+          </div>
+        </main>
+      ) : (
+      /* STUDIO THREE-COLUMN WORKSPACE */
       <div className="flex flex-1 overflow-hidden">
         {/* LEFT STEP NAVIGATION PANEL — desktop */}
         <aside className="w-56 border-r border-border bg-sidebar overflow-y-auto p-3 space-y-1 shrink-0 hidden md:block">
@@ -780,49 +1061,111 @@ export default function ResumeEditorPage() {
           </DrawerContent>
         </Drawer>
 
-        {/* FLOATING STEP SWITCHER — mobile */}
-        <div className="fixed bottom-4 left-1/2 z-40 -translate-x-1/2 md:hidden">
-          <Button
-            variant="default"
-            size="sm"
-            className="h-11 rounded-full px-4 shadow-lg"
-            leftIcon={Menu}
-            onClick={() => setDrawerOpen(true)}
-          >
-            <span>
-              {isFinalStep
-                ? "Final Review"
-                : `Step ${currentStep + 1}/${steps.length} • ${
-                    steps[currentStep]?.label
-                  }`}
-            </span>
-          </Button>
-        </div>
+        {/* STICKY BOTTOM NAV — mobile */}
+        <AnimatePresence>
+          {!isKeyboardOpen && !finished && (
+            <motion.nav
+              initial={{ y: 96 }}
+              animate={{ y: 0 }}
+              exit={{ y: 96 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+              className="md:hidden fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card/95 backdrop-blur-sm"
+              style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+            >
+              {isFinalStep ? (
+                <div className="px-3 pb-2 pt-2">
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 min-w-0"
+                      onClick={() => setCurrentStep(Math.max(0, currentStep - 1))}
+                      leftIcon={ArrowLeft}
+                    >
+                      <span>Previous</span>
+                    </Button>
+                    <Button
+                      variant="gradient"
+                      size="sm"
+                      className="flex-1 min-w-0"
+                      onClick={handleMobileExport}
+                      disabled={isExporting || !isResumeComplete}
+                      loading={isExporting}
+                      leftIcon={Download}
+                    >
+                      <span>Download PDF</span>
+                    </Button>
+                  </div>
+                  {!isResumeComplete && (
+                    <p className="px-1 pb-1.5 pt-2 text-[11px] font-medium leading-snug text-destructive">
+                      {missingSections.length > 0
+                        ? `Missing: ${missingSections.join(", ")}`
+                        : "Complete all required sections to download your PDF"}
+                    </p>
+                  )}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-2 w-full"
+                    onClick={handleSaveAndFinish}
+                    loading={isSaving}
+                    leftIcon={CheckCircle2}
+                  >
+                    <span>Save &amp; Finish</span>
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 px-3 py-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1 min-w-0"
+                    onClick={() => setCurrentStep(Math.max(0, currentStep - 1))}
+                    disabled={currentStep === 0}
+                    leftIcon={ArrowLeft}
+                  >
+                    <span>Previous</span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    aria-label="Open AI Assistant"
+                    title="Open AI Assistant"
+                    onClick={() => setAiAssistantOpen(true)}
+                  >
+                    <Sparkles className="h-5 w-5 text-primary" />
+                  </Button>
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    className="flex-1 min-w-0"
+                    onClick={() => setCurrentStep(Math.min(steps.length - 1, currentStep + 1))}
+                    disabled={!currentValid}
+                    rightIcon={ArrowRight}
+                  >
+                    <span>Next</span>
+                  </Button>
+                </div>
+              )}
+            </motion.nav>
+          )}
+        </AnimatePresence>
 
         {/* CENTER FORM & PAPER CANVAS SHEET */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 bg-surface">
-          <div className={cn("mx-auto", isFinalStep ? "max-w-6xl" : "max-w-3xl")}>
+        <main className="min-w-0 flex-1 overflow-y-auto bg-surface px-4 pb-[calc(9rem+env(safe-area-inset-bottom))] pt-4 sm:px-6 sm:pt-6 md:pb-8">
+          <div className={cn("mx-auto w-full min-w-0", isFinalStep ? "max-w-6xl" : "max-w-3xl")}>
             <div
               className={cn(
-                "items-start",
+                "w-full min-w-0 items-start",
                 isFinalStep
                   ? "grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(300px,340px)]"
                   : "space-y-6"
               )}
             >
               {/* LEFT / ACTIVE STEP COLUMN */}
-              <div className={cn("min-w-0", isFinalStep && "space-y-6")}>
-                {/* STEP PROGRESS STEPPER FOR MOBILE */}
-                <div className="flex items-center justify-between md:hidden pb-2 border-b border-border">
-                  <span className="text-xs font-bold text-primary">
-                    {isFinalStep ? "Final review" : `Section ${currentStep + 1} of ${steps.length}`}
-                  </span>
-                  <span className="text-xs font-semibold text-foreground">
-                    {steps[currentStep]?.label}
-                  </span>
-                </div>
-
+              <div className={cn("min-w-0 w-full", isFinalStep && "md:space-y-6")}>
                 <div
+                  className="w-full"
                   style={{
                     transform: `scale(${zoom / 100})`,
                     transformOrigin: "top center",
@@ -835,7 +1178,7 @@ export default function ResumeEditorPage() {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -8 }}
                       transition={{ duration: 0.2 }}
-                      className="rounded-2xl border border-border bg-card p-6 shadow-xs"
+                      className="w-full min-w-0 md:rounded-2xl md:border md:border-border md:bg-card md:p-6 md:shadow-xs"
                     >
                       {StepComponent && (
                         <StepComponent
@@ -843,59 +1186,62 @@ export default function ResumeEditorPage() {
                           resumeId={resumeId}
                           onGenerateTool={handleGenerateTool}
                           {...(steps[currentStep]?.id === "preview" ? { onPageCountChange: setPageCount } : {})}
+                          {...(steps[currentStep]?.id === "ats" ? { onChecked: handleAtsChecked } : {})}
                         />
                       )}
                     </motion.div>
                   </AnimatePresence>
                 </div>
 
-                {/* PREV / NEXT NAV BUTTONS */}
-                {isFinalStep ? (
-                  <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setCurrentStep(Math.max(0, currentStep - 1))}
-                      leftIcon={ArrowLeft}
-                    >
-                      Previous Section
-                    </Button>
+                {/* PREV / NEXT NAV BUTTONS — desktop only (mobile uses sticky bottom nav) */}
+                <div className="hidden md:block">
+                  {isFinalStep ? (
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentStep(Math.max(0, currentStep - 1))}
+                        leftIcon={ArrowLeft}
+                      >
+                        Previous Section
+                      </Button>
 
-                    <div className="flex items-center justify-center gap-2">
-                      {hasUnsavedChanges ? (
-                        <Badge variant="warning" dot>
-                          Unsaved changes
-                        </Badge>
-                      ) : (
-                        <Badge variant="success" dot>
-                          All changes saved
-                        </Badge>
-                      )}
+                      <div className="flex items-center justify-center gap-2">
+                        {hasUnsavedChanges ? (
+                          <Badge variant="warning" dot>
+                            Unsaved changes
+                          </Badge>
+                        ) : (
+                          <Badge variant="success" dot>
+                            All changes saved
+                          </Badge>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-between pt-4 border-t border-border">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setCurrentStep(Math.max(0, currentStep - 1))}
-                      disabled={currentStep === 0}
-                      leftIcon={ArrowLeft}
-                    >
-                      Previous Section
-                    </Button>
+                  ) : (
+                    <div className="flex items-center justify-between pt-4 border-t border-border">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentStep(Math.max(0, currentStep - 1))}
+                        disabled={currentStep === 0}
+                        leftIcon={ArrowLeft}
+                      >
+                        Previous Section
+                      </Button>
 
-                    <Button
-                      variant="primary"
-                      size="sm"
-                      onClick={() => setCurrentStep(Math.min(steps.length - 1, currentStep + 1))}
-                      disabled={currentStep === steps.length - 1 || !currentValid}
-                      rightIcon={ArrowRight}
-                    >
-                      Next Section
-                    </Button>
-                  </div>
-                )}
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        onClick={() => setCurrentStep(Math.min(steps.length - 1, currentStep + 1))}
+                        disabled={currentStep === steps.length - 1 || !currentValid}
+                        rightIcon={ArrowRight}
+                      >
+                        Next Section
+                      </Button>
+                    </div>
+                  )}
+                </div>
 
                 {currentStep < steps.length - 1 && !currentValid && (
                   <div className="flex items-start gap-2 rounded-xl border border-flag/30 bg-flag/5 px-3 py-2.5 text-xs text-destructive">
@@ -914,20 +1260,20 @@ export default function ResumeEditorPage() {
 
               {/* RIGHT / FINISH PANEL — shown on the final step */}
               {isFinalStep && (
-                <div className="min-w-0 lg:sticky lg:top-0">
+                <div id="resume-completion" className="min-w-0 scroll-mt-4 lg:sticky lg:top-0">
                   <ResumeCompletion
                     resume={currentResume}
                     resumeId={resumeId}
                     pageCount={pageCount}
                     completedCount={completedCount}
-                    totalSections={steps.length - 1}
+                    totalSections={totalSections}
                     hasUnsavedChanges={hasUnsavedChanges}
                     isSaving={isSaving}
                     isExporting={isExporting}
                     isComplete={isResumeComplete}
                     missingSections={missingSections}
                     lastSaved={lastSaved}
-                    onSave={handleSaveResume}
+                    onFinish={handleSaveAndFinish}
                     onExport={handleExportPDF}
                     onEdit={handleEditResume}
                     onPickTemplate={handleOpenTemplatePicker}
@@ -942,6 +1288,8 @@ export default function ResumeEditorPage() {
 
         {/* RIGHT AI ASSISTANT & ATS INSPECTOR */}
         <AIAssistant
+          open={aiAssistantOpen}
+          onOpenChange={setAiAssistantOpen}
           resumeId={resumeId}
           resume={currentResume}
           onApplyResult={handleApplyResult}
@@ -949,6 +1297,7 @@ export default function ResumeEditorPage() {
           onRequestHandled={handleRequestHandled}
         />
       </div>
+      )}
 
       <TemplatePicker
         open={pickerOpen}
@@ -968,6 +1317,87 @@ export default function ResumeEditorPage() {
         onOpenChange={(open) => !open && setUpgradeTemplate(null)}
         resumeId={resumeId}
       />
+
+      {/* RESUME SETTINGS — mobile menu */}
+      <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Resume Settings</DialogTitle>
+            <DialogDescription>
+              Update the name and visibility of this resume.
+            </DialogDescription>
+          </DialogHeader>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleSaveSettings();
+            }}
+            className="space-y-5"
+          >
+            <div className="space-y-2">
+              <Label htmlFor="resume-title">Resume Name</Label>
+              <Input
+                id="resume-title"
+                value={titleInput}
+                onChange={(e) => setTitleInput(e.target.value)}
+                placeholder="My Resume"
+              />
+            </div>
+            <div className="flex items-center justify-between gap-4 rounded-xl border border-border bg-secondary/30 px-4 py-3">
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-foreground">Public</p>
+                <p className="text-xs text-muted-foreground">
+                  Allow others to view this resume with the link.
+                </p>
+              </div>
+              <Switch
+                checked={isPublicToggle}
+                onCheckedChange={setIsPublicToggle}
+                aria-label="Toggle public visibility"
+              />
+            </div>
+            <DialogFooter className="gap-2 sm:gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setSettingsOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button type="submit">Save</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* DELETE RESUME — mobile menu */}
+      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete Resume?</DialogTitle>
+            <DialogDescription>
+              This action cannot be undone. This will permanently delete{" "}
+              <span className="font-semibold text-foreground">
+                {currentResume?.title || "this resume"}
+              </span>{" "}
+              and all of its contents.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-2">
+            <Button variant="outline" onClick={() => setDeleteOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="danger"
+              onClick={handleDeleteResume}
+              disabled={isDeleting}
+              loading={isDeleting}
+            >
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

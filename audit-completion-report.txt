@@ -1,0 +1,130 @@
+================================================================================
+AUDIT COMPLETION REPORT — Resumate (follow-up to audit-report.txt)
+================================================================================
+Project : Next.js 16.2.11 (App Router, Turbopack) / React 19.2.4 / Prisma 7.9 (PostgreSQL) / Zustand 5
+Date    : 2026-08-14
+Status  : All audit items resolved and verified (build, typecheck, prisma, live HTTP/API smoke).
+
+--------------------------------------------------------------------------------
+VERIFICATION RESULTS
+--------------------------------------------------------------------------------
+Production build   : PASS (npm run build, exit 0, TypeScript clean, all routes emitted)
+Typecheck          : PASS (npx tsc --noEmit, exit 0)
+Prisma             : PASS (npx prisma validate)
+HTTP smoke         : PASS (/, /templates, /login, /register, /blog, /blog/1, /features,
+                   /faq, /about, /contact, /privacy, /terms, /sitemap.xml, /robots.txt,
+                   /dashboard, /resume/new, /cover-letter/new, /admin all 200)
+API smoke          : PASS (30/33; 3 remaining were AI-credit 429s = correct limit enforcement;
+                   AI type validation, ATS score, PDF download, auth, CRUD, versioning, admin
+                   denial, favorites, prefs, analytics all verified against a live server)
+robots.txt         : PASS (no duplicate /api/, sitemap URL derived from SITE_CONFIG.url)
+sitemap.xml        : PASS (BASE_URL derived from SITE_CONFIG.url)
+Test-data hygiene  : PASS (5 temporary smoke/probe accounts + their resumes deleted)
+
+--------------------------------------------------------------------------------
+BUG FIXES (from audit-report.txt section 2)
+--------------------------------------------------------------------------------
+1.  AI ReferenceError              FIXED — userId read from auth (try scope) in catch blocks;
+                                    credit refund + clean 500 restored.
+    app/api/ai/route.js, ats-score/route.js, ats-improve/route.js, job-match/route.js
+2.  Non-atomic version restore     FIXED — wrapped in prisma.$transaction; verification step
+    app/api/resumes/[id]/version/[versionId]/route.js   added so a failed restore rolls back
+                                    (no permanent section loss).
+3.  Cookie token parsing bug       FIXED — regex now rejects the refreshToken substring.
+    lib/auth.js
+4.  /api/ai type not validated     FIXED — whitelist + clean 422 for unknown types.
+    app/api/ai/route.js
+5.  Admin "view resume" 404        FIXED — link corrected to /resume/{id}.
+    app/admin/resumes/page-content.js
+6.  Cover letters uneditable       FIXED — link uses record id; edit route /cover-letter/{id}.
+    app/dashboard/cover-letters/page-content.js
+7.  Admin settings false success   FIXED — result checked before showing "Saved!".
+    app/admin/settings/page-content.js
+8.  Admin dashboard blank         FIXED — Promise.all guarded with catch + res.ok checks.
+    app/admin/page-content.js
+9.  AI-credit negative guard      FIXED — floating-point guards added.
+    lib/usage.js, lib/usage-client.js
+10. Notification delete           FIXED — ownership check added.
+    app/api/notifications/[id]/route.js
+11. Cookie options                FIXED — secure/sameSite/httpOnly set for all auth cookies.
+    lib/auth.js, app/api/auth/*/route.js
+12. AI route /api/ai/[type]       FIXED — proper async error handling (500 no longer raw).
+    app/api/ai/[type]/route.js
+13. Cover letter service lock      FIXED — move up in /app/dashboard/cover-letters/page-content.js.
+14. AI keyword persistence        FIXED — keywords persisted to resume before regenerate.
+    app/api/ats-score/route.js
+15. Settings save silent fail     FIXED — response checked, error surfaced.
+    app/dashboard/settings/page-content.js
+16. Job-match NaN                 FIXED — numeric coercion + guard.
+    app/api/job-match/route.js
+17. Client Promise.all no-catch    FIXED — guarded dashboard/index page-content.
+18. Job-match/ATS race            FIXED — sequential awaits.
+    app/api/job-match/route.js
+19. Resume duplicate timer         FIXED — duplicate triggers save+recompute, not silent staleness.
+    app/dashboard/resumes/page-content.js
+20. Hero badge static copy        FIXED — reads live plan/limits.
+    app/(marketing)/page-content.js
+21. Touch devices (hover state)   FIXED — pointerdown/click fallback for first action button.
+    components/features/landing/hero-actions.jsx
+22. Profile badges stale plan     FIXED — badge source no longer stale after upgrade.
+    components/dashboard/profile-section.jsx
+23. Achievement icon preview      FIXED — icons render with className (not <Icon/> fragment).
+    components/features/resume/achievements-step.jsx
+24. Optimistic rollback gaps      FIXED — several components.
+25. Timer/abort leaks             FIXED — cleanup effects added.
+26. Store sync gaps               FIXED — languages/achievements/certificates persisted; education edit.
+27. Fabricated reviewCount        FIXED — count removed from seed/templates.
+    (files: components/templates/*, seed files)
+
+--------------------------------------------------------------------------------
+DEAD CODE / CLEANUP
+--------------------------------------------------------------------------------
+- 19 unused components deleted (list per audit-report.txt section 4).
+- 1 dead editor page deleted: app/dashboard/resumes/[id]/page-content.js.
+- 117 unused imports pruned across the codebase.
+- Unused exports removed: lib/utils.js (generateSlug, debounce, isValidEmail, isValidPhone, sleep),
+  lib/templates/registry.js (FONT_OPTIONS, getTemplates, FREE_COUNT, PREMIUM_COUNT),
+  lib/templates/normalize.js (emptyResumeData), lib/usage.js (PLAN_LIMITS, PLAN_LABELS, buildUsage),
+  lib/usage-client.js (getPlan, isEnterprisePlan), hooks/index.js (useScrollTo, useAutosave deleted),
+  validators/index.js (registerSchema deleted).
+- KEPT intentionally: `runtime` export (Next.js convention), shadcn/ui compound exports (badgeVariants,
+  buttonVariants, dialog/drawer/dropdown-menu/popover/select/table) as stable public API surface.
+- Root dev artifacts deleted (39 files), shots/, _gap_shots/, app/generated/, jsconfig.json removed;
+  tsconfig excludes generated.
+- Exports verified via automated scan + manual grep: only runtime + shadcn compound exports remain.
+
+--------------------------------------------------------------------------------
+DEPENDENCIES
+--------------------------------------------------------------------------------
+- Removed: @radix-ui/react-scroll-area (only used by deleted scroll-area.jsx).
+- vaul: uninstalled then reinstalled vaul@^1.1.2 after components/ui/drawer.jsx was rebuilt
+  (exports only the 5 components actually used: Drawer, DrawerContent, DrawerHeader, DrawerTitle,
+  DrawerDescription).
+- All @radix-ui/* and other deps verified as actually imported (57 react-hook-form uses, etc.).
+
+--------------------------------------------------------------------------------
+SEO / PERFORMANCE / SECURITY / ACCESSIBILITY
+--------------------------------------------------------------------------------
+SEO:    app/robots.ts + app/sitemap.ts now derive URLs from SITE_CONFIG.url; duplicate /api/ rule removed.
+Perf:   public/blog_hero.png (1.83 MB) -> public/blog_hero.webp (125.5 KB); next/image + long-lived cache;
+        page-content.js src + next.config.mjs header updated.
+Sec:    All Infinity sentinels for "unlimited" enterprise limits replaced with null:
+        lib/constants.js, lib/usage.js, lib/usage-client.js, app/api/admin/usage/route.js.
+        Remaining Infinity only in hero-animation (framer-motion repeat) and dev color script.
+A11y:   htmlFor/id wiring + Switch aria-label (education-step), SelectTrigger aria-labels
+        (skills-step, ai-assistant), label/aria coverage (certificates-step, achievements-step),
+        Textarea aria-label (ats-score-step), aria-label+aria-pressed (theme-toggle pills, pricing
+        billing toggle, reset-password eye toggle), footer GitHub link aria-label. Login uses plain
+        password input (built-in aria-label) - nothing to fix.
+
+--------------------------------------------------------------------------------
+KNOWN / INTENTIONAL REMNANTS
+--------------------------------------------------------------------------------
+- eslint/next lint: not configured in project (Next 16 removed next lint) - left as-is.
+- No automated test suite exists; smoke coverage was scripted ad-hoc (api-smoke.mjs, not committed).
+- registerSchema in validators/index.js deleted; validators/index.js still exports other schemas used.
+- AGENTS.md, proxy.js, audit-report.txt retained.
+
+================================================================================
+END — all items from audit-report.txt resolved and verified.
+================================================================================
