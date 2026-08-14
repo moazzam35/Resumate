@@ -86,6 +86,7 @@ export async function GET(request) {
           plan: { in: ["PRO", "ENTERPRISE"] },
           isActive: true,
           startDate: { gte: revenueStart },
+          user: { isTest: false },
         },
         select: { plan: true, startDate: true },
       }),

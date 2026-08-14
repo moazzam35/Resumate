@@ -1,3 +1,10 @@
+# Resumate — Agent Instructions
+
+**Read `CONTEXT.md` FIRST before doing any work.** It is the complete project
+context: stack, commands, environment variables, architecture, conventions,
+data model, admin-panel behavior, and known limitations. Treat it as the source
+of truth for how this codebase works.
+
 <!-- BEGIN:nextjs-agent-rules -->
 # This is NOT the Next.js you know
 
