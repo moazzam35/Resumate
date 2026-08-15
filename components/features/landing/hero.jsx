@@ -29,15 +29,6 @@ export default function HeroSection() {
         <HeroAnimation chrome={false} className="w-full h-full" />
       </div>
 
-      <motion.p
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.6, delay: 1.2, ease: [0.25, 0.1, 0.25, 1] }}
-        className="absolute bottom-6 sm:bottom-8 right-6 sm:right-8 z-50 text-[10px] text-muted-foreground/35 font-mono tracking-wider"
-      >
-        10,000+ resumes created
-      </motion.p>
-
       <div className="relative z-10 min-h-screen flex items-end pb-12 sm:pb-12 lg:pb-16 px-6 sm:px-10 lg:px-16">
         <div className="w-full max-w-7xl mx-auto">
           <motion.div

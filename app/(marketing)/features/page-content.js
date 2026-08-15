@@ -159,7 +159,7 @@ export default function FeaturesPage() {
               Ready to build your winning resume?
             </h2>
             <p className="mt-3 text-lg text-muted text-balance">
-              Join thousands of professionals who landed their dream jobs with AI-powered resumes.
+              Build a professional, ATS-friendly resume with AI-powered tools.
             </p>
             <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <Link href="/register">

@@ -50,38 +50,8 @@ const values = [
     icon: Globe,
     title: "Global Impact",
     description:
-      "We've helped professionals in 50+ countries build resumes that open doors.",
+      "We're building tools that help professionals everywhere put their best foot forward.",
   },
-];
-
-const team = [
-  {
-    name: "Sarah Johnson",
-    role: "CEO & Co-Founder",
-    bio: "Former recruiter turned tech entrepreneur. Passionate about democratizing access to career tools.",
-  },
-  {
-    name: "Michael Chen",
-    role: "CTO & Co-Founder",
-    bio: "AI researcher with 10+ years in NLP. Previously led ML teams at top tech companies.",
-  },
-  {
-    name: "Emily Rodriguez",
-    role: "Head of Design",
-    bio: "Award-winning designer focused on creating beautiful, functional experiences.",
-  },
-  {
-    name: "David Kim",
-    role: "Head of Engineering",
-    bio: "Full-stack engineer building scalable systems. Open source enthusiast.",
-  },
-];
-
-const stats = [
-  { label: "Resumes Created", value: "50,000+" },
-  { label: "Interviews Landed", value: "12,000+" },
-  { label: "Countries Served", value: "50+" },
-  { label: "Average ATS Score", value: "92%" },
 ];
 
 const fadeUp = {
@@ -130,7 +100,12 @@ export default function AboutPage() {
             variants={fadeUp}
             className="grid grid-cols-2 gap-4 md:grid-cols-4"
           >
-            {stats.map((stat, i) => (
+            {[
+              { label: "Free to start", value: "$0" },
+              { label: "ATS-optimized templates", value: "30+" },
+              { label: "AI actions per month (free)", value: "7" },
+              { label: "PDF export", value: "Yes" },
+            ].map((stat, i) => (
               <motion.div key={stat.label} custom={i} variants={fadeUp}>
                 <Card hover className="text-center">
                   <CardContent className="p-6">
@@ -172,10 +147,9 @@ export default function AboutPage() {
             transition={{ delay: 0.05 }}
             className="text-lg leading-relaxed"
           >
-            Our founders — a former recruiter and an AI researcher — teamed up to
-            build a solution. They envisioned a tool that would combine the
-            intelligence of AI with the expertise of recruiting professionals to
-            give every job seeker a fair shot.
+            The team behind Resumate set out to build a solution that would
+            combine the intelligence of AI with the expertise of recruiting
+            professionals to give every job seeker a fair shot.
           </motion.p>
           <motion.p
             initial={{ opacity: 0, y: 12 }}
@@ -184,9 +158,9 @@ export default function AboutPage() {
             transition={{ delay: 0.1 }}
             className="text-lg leading-relaxed"
           >
-            Today, Resumate has helped over 50,000 professionals create
-            resumes that not only look great but actually get results. We&apos;re
-            proud of the impact we&apos;ve had, but we&apos;re just getting started.
+            Today, Resumate helps professionals create resumes that not only
+            look great but actually get results. We&apos;re proud of the work
+            we do, and we&apos;re just getting started.
           </motion.p>
         </div>
       </section>
@@ -226,43 +200,6 @@ export default function AboutPage() {
                 </motion.div>
               );
             })}
-          </motion.div>
-        </div>
-      </section>
-
-      <section className="px-4 py-24 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-7xl">
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            variants={fadeUp}
-            className="mb-12 text-center"
-          >
-            <h2 className="heading-display text-3xl font-semibold sm:text-4xl">Meet the Team</h2>
-            <p className="mt-3 text-muted">The people behind Resumate.</p>
-          </motion.div>
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: "-100px" }}
-            variants={{ visible: { transition: { staggerChildren: 0.08 } } }}
-            className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
-          >
-            {team.map((member) => (
-              <motion.div key={member.name} variants={fadeUp}>
-                <Card hover className="h-full text-center">
-                  <CardContent className="p-6">
-                    <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-stamp text-sm font-semibold text-paper">
-                      {member.name.split(" ").map((n) => n[0]).join("")}
-                    </div>
-                    <h3 className="heading-display font-semibold text-sm">{member.name}</h3>
-                    <p className="text-xs text-stamp mt-0.5">{member.role}</p>
-                    <p className="mt-2 text-xs text-muted leading-relaxed">{member.bio}</p>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            ))}
           </motion.div>
         </div>
       </section>

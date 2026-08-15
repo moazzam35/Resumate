@@ -105,7 +105,7 @@ const sections = [
   {
     title: "Contact",
     body: [
-      "For questions about these Terms of Service, contact us at support@resumate.com.",
+      "For questions about these Terms of Service, contact us at support@resumate.app.",
     ],
   },
 ];

@@ -139,20 +139,31 @@ export default function ProfilePage() {
         const formData = new FormData();
         formData.append("file", avatarFile);
 
-        const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
-        const uploadRes = await fetch("/api/upload", {
-          method: "POST",
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-          body: formData,
-        });
+        let uploadRes;
+        try {
+          const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+          uploadRes = await fetch("/api/upload", {
+            method: "POST",
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+            body: formData,
+          });
+        } catch (fetchErr) {
+          setIsUploading(false);
+          throw new Error("Network error while uploading avatar. Please check your connection and try again.");
+        }
 
         if (!uploadRes.ok) {
           const errData = await uploadRes.json().catch(() => ({}));
-          throw new Error(errData.error || "Failed to upload avatar");
+          setIsUploading(false);
+          throw new Error(errData.message || errData.error || "Avatar upload failed. Please try a different image.");
         }
 
         const uploadData = await uploadRes.json();
         avatarUrl = uploadData.data?.url || uploadData.url || null;
+        if (!avatarUrl) {
+          setIsUploading(false);
+          throw new Error("Upload succeeded but no image URL was returned. Please try again.");
+        }
         setIsUploading(false);
       }
 
@@ -318,10 +329,16 @@ export default function ProfilePage() {
             )}
           </div>
         </div>
-        {avatarPreview && (
+        {avatarPreview && !isUploading && (
+          <div className="mt-4 flex items-center gap-2 text-xs text-muted">
+            <div className="h-2 w-2 rounded-full bg-verified" />
+            New avatar selected — click "Save Profile" to apply
+          </div>
+        )}
+        {isUploading && (
           <div className="mt-4 flex items-center gap-2 text-xs text-muted">
             <Loader2 className="h-3 w-3 animate-spin" />
-            New avatar selected — it will be saved with the profile
+            Uploading avatar…
           </div>
         )}
       </Card>
@@ -394,8 +411,8 @@ export default function ProfilePage() {
             </div>
 
             <div className="flex justify-end pt-4 border-t border-border/60">
-              <Button type="submit" loading={isLoading} variant="primary" leftIcon={Save}>
-                Save Profile
+              <Button type="submit" loading={isLoading || isUploading} variant="primary" leftIcon={Save}>
+                {isUploading ? "Uploading…" : "Save Profile"}
               </Button>
             </div>
           </form>

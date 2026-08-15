@@ -141,6 +141,7 @@ export function ResumeCompletion({
   pageCount = 1,
   completedCount = 0,
   totalSections = 0,
+  percentage = null,
   hasUnsavedChanges = false,
   isSaving = false,
   isExporting = false,
@@ -159,7 +160,12 @@ export function ResumeCompletion({
   const template = getTemplate(resume.template);
   const atsScore = resume.atsScore;
   const exportDisabled = !isComplete || hasUnsavedChanges;
-  const pct = totalSections > 0 ? Math.round((completedCount / totalSections) * 100) : 0;
+  const pct =
+    percentage != null
+      ? Math.min(100, Math.max(0, Math.round(percentage)))
+      : totalSections > 0
+      ? Math.round((completedCount / totalSections) * 100)
+      : 0;
   const pagesLabel = pageCount === 1 ? "page" : "pages";
 
   return (
@@ -206,19 +212,34 @@ export function ResumeCompletion({
               initial={{ scale: 0, rotate: -24 }}
               animate={{ scale: 1, rotate: 0 }}
               transition={{ type: "spring", stiffness: 260, damping: 16, delay: 0.15 }}
-              className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-seal to-seal/85 text-stamp shadow-md"
+              className={`flex h-14 w-14 items-center justify-center rounded-full shadow-md ${
+                isComplete
+                  ? "bg-gradient-to-br from-seal to-seal/85 text-stamp"
+                  : "bg-gradient-to-br from-stamp to-stamp/85 text-paper"
+              }`}
             >
-              <Check className="h-7 w-7" strokeWidth={3} aria-hidden="true" />
+              {isComplete ? (
+                <Check className="h-7 w-7" strokeWidth={3} aria-hidden="true" />
+              ) : (
+                <PencilLine className="h-7 w-7" strokeWidth={2.5} aria-hidden="true" />
+              )}
             </motion.div>
           </div>
 
-          <p className="font-mono text-[10px] font-bold uppercase tracking-[0.25em] text-seal">
-            Document approved
+          <p
+            className={`font-mono text-[10px] font-bold uppercase tracking-[0.25em] ${
+              isComplete ? "text-seal" : "text-stamp"
+            }`}
+          >
+            {isComplete ? "Document approved" : "Resume in progress"}
           </p>
-          <h3 className="heading-display mt-1.5 text-xl font-bold text-ink">Your resume is ready</h3>
+          <h3 className="heading-display mt-1.5 text-xl font-bold text-ink">
+            {isComplete ? "Your resume is ready" : "A few sections to go"}
+          </h3>
           <p className="mt-1.5 max-w-[260px] text-xs leading-relaxed text-muted-foreground">
-            Review the live preview below, then finish your resume to unlock
-            PDF export.
+            {isComplete
+              ? "Review the live preview below, then finish your resume to unlock PDF export."
+              : "Finish the required sections above to unlock PDF export."}
           </p>
         </div>
       </motion.div>

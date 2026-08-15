@@ -19,7 +19,7 @@ const planCard = (plan) => ({
   ...plan,
   variant: plan.id === "pro" ? "primary" : "outline",
   badge: plan.id === "pro" ? "Most Popular" : null,
-  action: plan.id === "pro" ? "Upgrade to Pro" : "Get Executive Access",
+  action: plan.id === "pro" ? "Upgrade to Pro" : "Get Enterprise Access",
 });
 
 export default function UpgradePage() {

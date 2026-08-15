@@ -86,7 +86,7 @@ const items = [
     icon: "Radar",
     body: [
       "Errors are logged and reviewed to detect anomalies.",
-      "We follow responsible disclosure practices. If you discover a vulnerability, report it to security@resumate.com.",
+      "We follow responsible disclosure practices. If you discover a vulnerability, report it to security@resumate.app.",
     ],
   },
 ];

@@ -351,7 +351,7 @@ export default function AdminSettingsPage() {
                   <CardContent className="space-y-6">
                     <div className="grid gap-4 sm:grid-cols-3">
                       {[
-                        { name: "Free", price: "$0", features: ["1 resume", "Basic templates", `${settings.freeAiRequestsPerDay} AI requests/day`] },
+                        { name: "Free", price: "$0", features: ["3 resumes", "Basic templates", `${settings.freeAiRequestsPerDay} AI requests/day`] },
                         { name: "Pro", price: "$12/mo", features: ["Unlimited resumes", "All templates", `${settings.proAiRequestsPerDay} AI requests/day`, "Priority support"] },
                         { name: "Enterprise", price: "$29/mo", features: ["Everything in Pro", "5000 AI requests/day", "Custom templates", "API access", "Dedicated support"] },
                       ].map((plan) => (

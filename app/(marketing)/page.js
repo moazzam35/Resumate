@@ -5,7 +5,6 @@ const LiveDemoSection = dynamic(() => import("@/components/features/landing/live
 const FeaturesSection = dynamic(() => import("@/components/features/landing/features"));
 const AIFeaturesSection = dynamic(() => import("@/components/features/landing/ai-features"));
 const TemplatesSection = dynamic(() => import("@/components/features/landing/templates"));
-const TestimonialsSection = dynamic(() => import("@/components/features/landing/testimonials"));
 const PricingSection = dynamic(() => import("@/components/features/landing/pricing"));
 const FAQSection = dynamic(() => import("@/components/features/landing/faq"));
 const CTASection = dynamic(() => import("@/components/features/landing/cta"));
@@ -68,7 +67,6 @@ export default function LandingPage() {
       <FeaturesSection />
       <AIFeaturesSection />
       <TemplatesSection />
-      <TestimonialsSection />
       <PricingSection />
       <FAQSection />
       <CTASection />

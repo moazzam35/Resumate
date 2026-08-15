@@ -37,9 +37,8 @@ export default function CTASection() {
                 Start building your dream resume today
               </h2>
               <p className="text-lg text-white/70 max-w-2xl mx-auto mb-10 text-balance leading-relaxed">
-                Join thousands of job seekers who landed their dream jobs with
-                our AI-powered resume builder. Start for free, no credit card
-                required.
+                Build a professional, ATS-friendly resume with our AI-powered
+                resume builder. Start for free, no credit card required.
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
                 <Link href="/register">
@@ -54,7 +53,7 @@ export default function CTASection() {
                 </Link>
               </div>
               <p className="text-sm text-white/50 mt-6">
-                Free plan includes 1 resume, 3 templates, and basic AI suggestions.
+                Free plan includes 3 resumes, 3 templates, and basic AI suggestions.
               </p>
             </motion.div>
           </div>

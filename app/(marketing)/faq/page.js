@@ -55,7 +55,7 @@ const generalQuestions = [
   {
     question: "Is Resumate free to use?",
     answer:
-      "Yes! Our free plan includes 1 resume, 3 templates, basic AI suggestions, and PDF export. For unlimited resumes, all templates, and advanced AI features, check out our Pro plan at just $12/month.",
+      "Yes! Our free plan includes 3 resumes, 3 templates, basic AI suggestions, and PDF export. For 10 resumes, all templates, and advanced AI features, check out our Pro plan at just $12/month.",
   },
   {
     question: "Do I need to create an account?",

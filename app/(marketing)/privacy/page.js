@@ -106,7 +106,7 @@ const sections = [
   {
     title: "Contact Us",
     body: [
-      "If you have questions about this Privacy Policy or how your data is handled, contact us at support@resumate.com.",
+      "If you have questions about this Privacy Policy or how your data is handled, contact us at support@resumate.app.",
       "We may update this policy from time to time. We will notify you of material changes by posting the updated policy on this page.",
     ],
   },

@@ -1267,6 +1267,7 @@ export default function ResumeEditorPage() {
                     pageCount={pageCount}
                     completedCount={completedCount}
                     totalSections={totalSections}
+                    percentage={resumeCompletion.percentage}
                     hasUnsavedChanges={hasUnsavedChanges}
                     isSaving={isSaving}
                     isExporting={isExporting}

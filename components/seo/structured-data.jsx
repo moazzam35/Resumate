@@ -1,58 +1,38 @@
+import { SITE_CONFIG } from "@/lib/constants";
+
+const baseUrl = SITE_CONFIG.url.replace(/\/$/, "");
+
 const structuredData = {
   "@context": "https://schema.org",
   "@graph": [
     {
       "@type": "WebSite",
-      name: "Resumate",
+      name: SITE_CONFIG.name,
       description:
         "Create professional ATS-friendly resumes in minutes using AI. Improve your ATS score, generate tailored cover letters, optimize your resume, and prepare for interviews—all in one platform.",
-      url: "https://resumate.ai",
-      potentialAction: {
-        "@type": "SearchAction",
-        target: "https://resumate.ai/search?q={search_term_string}",
-        "query-input": "required name=search_term_string",
-      },
+      url: baseUrl,
     },
     {
       "@type": "Organization",
-      name: "Resumate",
+      name: SITE_CONFIG.name,
       description:
         "AI-powered resume builder and ATS resume checker that helps professionals create ATS-friendly resumes, generate cover letters, and prepare for interviews.",
-      url: "https://resumate.ai",
-      logo: "https://resumate.ai/icon-512.svg",
-      sameAs: [
-        "https://twitter.com/airesumebuilder",
-        "https://github.com/airesumebuilder",
-      ],
+      url: baseUrl,
+      logo: `${baseUrl}/icon-512.svg`,
+      sameAs: Object.values(SITE_CONFIG.links),
       contactPoint: {
         "@type": "ContactPoint",
         contactType: "customer support",
-        email: "support@resumate.com",
+        email: "support@resumate.app",
       },
-    },
-    {
-      "@type": "WebApplication",
-      name: "Resumate",
-      description:
-        "Create professional ATS-friendly resumes in minutes using AI. Improve your ATS score, generate tailored cover letters, optimize your resume, and prepare for interviews—all in one platform.",
-      url: "https://resumate.ai",
-      applicationCategory: "Business",
-      operatingSystem: "Web",
-      offers: {
-        "@type": "Offer",
-        price: "0",
-        priceCurrency: "USD",
-        description: "Free plan available",
-      },
-      softwareApplicationCategory: "Resume Builder",
     },
     {
       "@type": "SoftwareApplication",
-      name: "Resumate",
+      name: SITE_CONFIG.name,
       description:
         "Create professional ATS-friendly resumes in minutes using AI. Improve your ATS score, generate tailored cover letters, optimize your resume, and prepare for interviews—all in one platform.",
-      url: "https://resumate.ai",
-      applicationCategory: "Business",
+      url: baseUrl,
+      applicationCategory: "BusinessApplication",
       operatingSystem: "Web",
       offers: {
         "@type": "AggregateOffer",
@@ -61,7 +41,7 @@ const structuredData = {
         priceCurrency: "USD",
         offerCount: "3",
       },
-      features: [
+      featureList: [
         "AI Resume Builder",
         "ATS Resume Checker",
         "Cover Letter Generator",

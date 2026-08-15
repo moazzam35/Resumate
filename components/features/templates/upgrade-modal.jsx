@@ -61,7 +61,7 @@ export function UpgradeModal({ template, open, onOpenChange, resumeId }) {
             Upgrade to Pro
           </Button>
           <p className="text-center text-xs text-muted-foreground">
-            From $9/mo · Cancel anytime · 14-day money-back guarantee
+            From $12/mo · Cancel anytime · 14-day money-back guarantee
           </p>
         </div>
       </DialogContent>

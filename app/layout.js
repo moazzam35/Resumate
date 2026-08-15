@@ -3,6 +3,7 @@ import { AuthInitializer } from "@/components/auth-initializer";
 import { Toast } from "@/components/toast";
 import StructuredData from "@/components/seo/structured-data";
 import { Fraunces, IBM_Plex_Mono, Public_Sans, Space_Grotesk } from "next/font/google";
+import { SITE_CONFIG } from "@/lib/constants";
 import "./globals.css";
 
 const fontSans = Public_Sans({
@@ -114,13 +115,9 @@ export const metadata = {
       },
     ],
   },
-  metadataBase: new URL("https://resumate.ai"),
+  metadataBase: new URL(SITE_CONFIG.url),
   charset: "utf-8",
-  alternates: {
-    canonical: "/",
-  },
   generator: "Resumate",
-  applicationSize: "1024x768",
 };
 
 export const viewport = {
