@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma";
 import { generateRandomToken, hashResetToken } from "@/lib/password";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { hasEmailProvider, sendPasswordResetEmail } from "@/lib/mailer";
+import { getSiteUrl } from "@/lib/constants";
 import { forgotPasswordSchema } from "@/validators";
 
 const RESET_TOKEN_TTL_MS = 60 * 60 * 1000; // 1 hour
@@ -79,7 +80,7 @@ export async function POST(request) {
       },
     });
 
-    const resetLink = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/reset-password?token=${encodeURIComponent(resetToken)}`;
+    const resetLink = `${getSiteUrl()}/reset-password?token=${encodeURIComponent(resetToken)}`;
 
     // Sending the email is best-effort. A delivery failure must never turn
     // into a 500 — that would (a) break the UX and (b) leak which emails have

@@ -5,6 +5,7 @@ import { signAccessToken, signRefreshToken } from "@/lib/auth";
 import { z } from "zod";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { hasEmailProvider, sendVerificationEmail } from "@/lib/mailer";
+import { getSiteUrl } from "@/lib/constants";
 import { startOfNextMonth } from "@/lib/usage";
 
 const VERIFY_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
@@ -113,7 +114,7 @@ export async function POST(request) {
           expiresAt: new Date(Date.now() + VERIFY_TTL_MS),
         },
       });
-      const verifyLink = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/verify-email?token=${encodeURIComponent(verifyToken)}`;
+      const verifyLink = `${getSiteUrl()}/verify-email?token=${encodeURIComponent(verifyToken)}`;
       await sendVerificationEmail({ to: user.email, name: user.name, verifyLink });
       emailVerificationSent = true;
       // No email provider configured in dev: surface the link directly in the

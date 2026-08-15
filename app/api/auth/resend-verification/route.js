@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma";
 import { generateRandomToken, hashResetToken } from "@/lib/password";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { hasEmailProvider, sendVerificationEmail } from "@/lib/mailer";
+import { getSiteUrl } from "@/lib/constants";
 import { z } from "zod";
 
 const VERIFY_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
@@ -80,7 +81,7 @@ export async function POST(request) {
       data: { userId: user.id, token: `verify:${hashResetToken(token)}`, expiresAt },
     });
 
-    const verifyLink = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/verify-email?token=${encodeURIComponent(token)}`;
+    const verifyLink = `${getSiteUrl()}/verify-email?token=${encodeURIComponent(token)}`;
 
     await sendVerificationEmail({ to: user.email, name: user.name, verifyLink });
 

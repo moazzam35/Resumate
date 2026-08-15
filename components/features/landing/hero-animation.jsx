@@ -13,6 +13,47 @@ const BADGES = [
   { label: "ATS Score: 96", x: "74%", y: "52%", color: "var(--seal)" },
 ];
 
+/* =====================================================================
+   Frame preload cache (module scope).
+
+   - Dedupes in-flight requests: the same URL shares a single Image object,
+     so switching desktop <-> mobile (or navigating back to the page) never
+     re-downloads frames the browser has already delivered this session.
+   - Failed frames are cached as `null` so a 404 is not retried endlessly.
+   - The returned promise resolves with the Image (usable directly by the
+     canvas renderer) or `null` on failure — never rejects.
+   ===================================================================== */
+const FRAME_CACHE = new Map();
+
+function loadFrame(url) {
+  let pending = FRAME_CACHE.get(url);
+  if (pending) return pending;
+  pending = new Promise((resolve) => {
+    const img = new Image();
+    img.decoding = "async";
+    img.onload = () => resolve(img);
+    img.onerror = () => {
+      console.error(`[HeroAnimation] failed to load frame: ${url}`);
+      resolve(null);
+    };
+    img.src = url;
+  });
+  FRAME_CACHE.set(url, pending);
+  return pending;
+}
+
+/* Progressive-loading tuning.
+   Desktop frames are ~32KB each: 8 critical frames is roughly 250KB and
+   gives a clearly smooth opening beat. Mobile frames are ~720KB each, so we
+   start with 4 critical frames (~2.9MB) and stream the rest in the
+   background — the renderer holds on the last loaded frame (with the existing
+   drift animation) until more frames arrive, like progressive video buffering. */
+const CONCURRENCY = 4;
+const CRITICAL_FRAMES_DESKTOP = 8;
+const CRITICAL_FRAMES_MOBILE = 4;
+const START_TIMEOUT_MS = 6000;
+const HARD_TIMEOUT_MS = 12000;
+
 export default function HeroAnimation({
   folder = "/frames",
   prefix = "frame_",
@@ -20,105 +61,127 @@ export default function HeroAnimation({
   ext = "webp",
   maxFrames = 98,
   frameDuration = 60,
-  mobileFrameDuration = 1000 / 16,
   className = "",
   chrome = true,
-  mobile = { folder: "/mobile-frames", prefix: "frame_", padding: 3, ext: "png", maxFrames: 141 },
-  breakpoint = 768,
   fit = "cover",
-  mobileFit = "cover",
+  isMobile = false,
 }) {
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
   const framesRef = useRef([]);
+  const doneRef = useRef(false);
   const dprRef = useRef(1);
 
   const [ready, setReady] = useState(false);
   const [loaded, setLoaded] = useState(0);
   const [total, setTotal] = useState(0);
-  const [expected, setExpected] = useState(maxFrames);
-  const [source, setSource] = useState("desktop");
+  const expected = maxFrames;
+  const source = isMobile ? "mobile" : "desktop";
 
+  /* =====================================================================
+     PHASE 1 — load critical frames first, then stream the rest.
+     ===================================================================== */
   useEffect(() => {
-    const mql = window.matchMedia(`(min-width: ${breakpoint}px)`);
+    const container = containerRef.current;
+    if (!container) return;
+
     let cancelled = false;
     let stopLoading = null;
 
-    const start = (nextSource) => {
-      const cfg =
-        nextSource === "desktop"
-          ? { folder, prefix, padding, ext, maxFrames }
-          : {
-              folder: mobile.folder,
-              prefix: mobile.prefix,
-              padding: mobile.padding,
-              ext: mobile.ext,
-              maxFrames: mobile.maxFrames,
-            };
+    const checkAndStart = () => {
+      const isVisible = container.offsetWidth > 0 || container.offsetHeight > 0;
+      if (!isVisible) return;
+      if (stopLoading) return;
 
-      let innerCancelled = false;
-      let loadedCount = 0;
-
-      setSource(nextSource);
+      framesRef.current = [];
+      doneRef.current = false;
       setLoaded(0);
       setTotal(0);
-      setExpected(cfg.maxFrames);
       setReady(false);
 
-      const loadOne = (i) =>
-        new Promise((resolve) => {
-          const img = new Image();
-          img.onload = () => {
-            if (!innerCancelled) {
-              loadedCount++;
-              setLoaded(loadedCount);
-            }
-            resolve(img);
-          };
-          img.onerror = () => {
-            if (!innerCancelled) {
-              loadedCount++;
-              setLoaded(loadedCount);
-            }
-            resolve(null);
-          };
-          img.src = `${cfg.folder}/${cfg.prefix}${pad(i + 1, cfg.padding)}.${cfg.ext}`;
-        });
+      const critical = isMobile ? CRITICAL_FRAMES_MOBILE : CRITICAL_FRAMES_DESKTOP;
 
-      (async () => {
-        const batch = Array.from({ length: cfg.maxFrames }, (_, i) => loadOne(i));
-        const results = await Promise.all(batch);
-        if (innerCancelled || cancelled) return;
+      const loadAll = () => {
+        const urls = Array.from(
+          { length: maxFrames },
+          (_, i) => `${folder}/${prefix}${pad(i + 1, padding)}.${ext}`
+        );
+        const results = new Array(maxFrames);
+        let head = 0;
+        let cursor = 0;
+        let pending = 0;
 
-        const valid = results.filter(Boolean);
-        framesRef.current = valid;
-        setTotal(valid.length);
+        const maybeStart = () => {
+          if (cancelled) return;
+          const have = framesRef.current.length;
+          if (have >= critical || (doneRef.current && have > 0)) setReady(true);
+        };
+
+        const append = () => {
+          while (head < maxFrames && results[head] !== undefined) {
+            const img = results[head];
+            if (img) {
+              framesRef.current.push(img);
+              setLoaded(framesRef.current.length);
+              maybeStart();
+            }
+            head++;
+          }
+        };
+
+        const pump = () => {
+          while (!cancelled && pending < CONCURRENCY && cursor < maxFrames) {
+            const i = cursor++;
+            pending++;
+            loadFrame(urls[i]).then((img) => {
+              if (cancelled) return;
+              results[i] = img;
+              pending--;
+              append();
+              pump();
+              if (head >= maxFrames) {
+                doneRef.current = true;
+                setTotal(framesRef.current.length);
+                maybeStart();
+              }
+            });
+          }
+        };
+
+        pump();
+      };
+
+      loadAll();
+
+      const startTimer = setTimeout(() => {
+        if (cancelled) return;
+        if (framesRef.current.length >= 1 && !doneRef.current) setReady(true);
+      }, START_TIMEOUT_MS);
+
+      const hardTimer = setTimeout(() => {
+        if (cancelled) return;
         setReady(true);
-      })();
+      }, HARD_TIMEOUT_MS);
 
-      return () => {
-        innerCancelled = true;
+      stopLoading = () => {
+        clearTimeout(startTimer);
+        clearTimeout(hardTimer);
       };
     };
 
-    const update = () => {
-      const nextSource = mql.matches ? "desktop" : "mobile";
-      if (stopLoading) stopLoading();
-      stopLoading = start(nextSource);
-    };
-
-    update();
-    mql.addEventListener("change", update);
+    checkAndStart();
+    window.addEventListener("resize", checkAndStart);
 
     return () => {
       cancelled = true;
       if (stopLoading) stopLoading();
       framesRef.current = [];
-      mql.removeEventListener("change", update);
+      doneRef.current = false;
+      window.removeEventListener("resize", checkAndStart);
     };
-  }, [folder, prefix, padding, ext, maxFrames, mobile.folder, mobile.prefix, mobile.padding, mobile.ext, mobile.maxFrames, breakpoint]);
+  }, [folder, prefix, padding, ext, maxFrames, isMobile]);
 
-  const fitMode = source === "mobile" ? mobileFit : fit;
+  const fitMode = fit;
 
   const drawFrame = useCallback((ctx, img, w, h, alpha, driftX, driftY, currentFit) => {
     if (!img || !img.naturalWidth) return;
@@ -156,18 +219,25 @@ export default function HeroAnimation({
     ctx.restore();
   }, []);
 
+  /* =====================================================================
+     PHASE 2/3 — canvas render loop.
+
+     The loop runs the moment the Hero becomes ready and keeps running while
+     the remaining frames stream in. While frames are still loading it plays
+     forward frame-by-frame at the existing cadence and holds (with the same
+     drift animation) at the last loaded frame; once the full set has arrived
+     it seamlessly switches to the original wrap-around loop — identical
+     timing, blending and drift as before.
+     ===================================================================== */
   useEffect(() => {
-    if (!ready || total === 0) return;
+    if (!ready) return;
 
     const canvas = canvasRef.current;
     const container = containerRef.current;
     if (!canvas || !container) return;
 
     const ctx = canvas.getContext("2d");
-    const frames = framesRef.current;
-    const frameCount = frames.length;
-    const duration = source === "mobile" ? mobileFrameDuration : frameDuration;
-    const loopMs = frameCount * duration;
+    const duration = frameDuration;
 
     function resize() {
       const rect = container.getBoundingClientRect();
@@ -184,36 +254,62 @@ export default function HeroAnimation({
 
     let raf = null;
     let startTime = 0;
+    let prevDone = false;
 
     function render(timestamp) {
       if (!startTime) startTime = timestamp;
 
+      const frames = framesRef.current;
+      const frameCount = frames.length;
+      const done = doneRef.current;
+
+      /* Seamless transition from progressive playback to the full loop:
+         continue from the frame we were holding instead of popping to the
+         wrapped position. */
+      if (done && !prevDone && frameCount > 0) {
+        const held = Math.min(
+          Math.floor((timestamp - startTime) / duration),
+          frameCount - 1
+        );
+        startTime = timestamp - held * duration;
+        prevDone = true;
+      }
+
       const elapsed = timestamp - startTime;
-      const progress = (elapsed % loopMs) / loopMs;
-      const position = progress * frameCount;
-
-      const indexA = Math.floor(position) % frameCount;
-      const indexB = (indexA + 1) % frameCount;
-      const blend = position - Math.floor(position);
-
-      const imgA = frames[indexA];
-      const imgB = frames[indexB];
 
       const w = canvas.width / dprRef.current;
       const h = canvas.height / dprRef.current;
 
-      const t = timestamp / 1000;
-      const driftX = Math.sin(t * 0.08) * 0.4;
-      const driftY = Math.cos(t * 0.11) * 0.3;
+      if (frameCount > 0) {
+        let position;
+        if (done) {
+          const loopMs = frameCount * duration;
+          position = ((elapsed % loopMs) / loopMs) * frameCount;
+        } else {
+          position = elapsed / duration;
+          if (position > frameCount - 1) position = frameCount - 1;
+        }
 
-      ctx.save();
-      ctx.setTransform(dprRef.current, 0, 0, dprRef.current, 0, 0);
-      ctx.clearRect(0, 0, w, h);
-      drawFrame(ctx, imgA, w, h, 1, driftX, driftY, fitMode);
-      if (blend > 0.001) {
-        drawFrame(ctx, imgB, w, h, blend, driftX, driftY, fitMode);
+        const indexA = Math.floor(position) % frameCount;
+        const indexB = (indexA + 1) % frameCount;
+        const blend = position - Math.floor(position);
+
+        const imgA = frames[indexA];
+        const imgB = frames[indexB];
+
+        const t = timestamp / 1000;
+        const driftX = Math.sin(t * 0.08) * 0.4;
+        const driftY = Math.cos(t * 0.11) * 0.3;
+
+        ctx.save();
+        ctx.setTransform(dprRef.current, 0, 0, dprRef.current, 0, 0);
+        ctx.clearRect(0, 0, w, h);
+        drawFrame(ctx, imgA, w, h, 1, driftX, driftY, fitMode);
+        if (blend > 0.001) {
+          drawFrame(ctx, imgB, w, h, blend, driftX, driftY, fitMode);
+        }
+        ctx.restore();
       }
-      ctx.restore();
 
       raf = requestAnimationFrame(render);
     }
@@ -236,7 +332,7 @@ export default function HeroAnimation({
       document.removeEventListener("visibilitychange", onVisibilityChange);
       if (raf) cancelAnimationFrame(raf);
     };
-  }, [ready, total, frameDuration, mobileFrameDuration, source, drawFrame, fitMode]);
+  }, [ready, frameDuration, drawFrame, fitMode]);
 
   if (!chrome) {
     return (
