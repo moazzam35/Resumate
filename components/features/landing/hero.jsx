@@ -62,10 +62,10 @@ export default function HeroSection() {
             variants={containerVariants}
             initial="hidden"
             animate="visible"
-            className="max-w-lg space-y-8"
+            className="max-w-lg space-y-3 md:space-y-8"
           >
             <motion.div variants={itemVariants} className="space-y-5">
-              <h1 className="text-3xl sm:text-4xl lg:text-[3.25rem] font-heading font-medium tracking-tight text-ink leading-[1.1] text-balance">
+              <h1 className="text-3xl sm:text-4xl lg:text-[3.25rem] font-heading font-bold md:font-medium tracking-tight text-ink leading-[1.1] text-balance rounded-2xl border border-white/20 bg-white/10 px-4 py-3 backdrop-blur-md md:border-transparent md:bg-transparent md:px-0 md:py-0 md:backdrop-blur-none">
                 Build Resumes That{" "}
                 <span className="text-stamp">Get You Hired.</span>
               </h1>
