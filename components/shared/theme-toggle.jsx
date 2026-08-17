@@ -10,7 +10,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
 
 export function ThemeToggle({ variant = "dropdown", className = "" }) {
   const { theme, setTheme, resolvedTheme } = useTheme();
@@ -22,14 +21,12 @@ export function ThemeToggle({ variant = "dropdown", className = "" }) {
 
   if (!mounted) {
     return (
-      <Button
-        variant="ghost"
-        size="icon"
-        className={`h-8 w-8 rounded-[8px] border border-border ${className}`}
+      <button
+        className={`flex h-8 w-8 items-center justify-center rounded-[8px] border border-border ${className}`}
         aria-label="Toggle theme"
       >
         <Sun className="h-[18px] w-[18px] text-muted opacity-50" />
-      </Button>
+      </button>
     );
   }
 
@@ -83,13 +80,10 @@ export function ThemeToggle({ variant = "dropdown", className = "" }) {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          className={`relative h-8 w-8 rounded-[8px] border border-border hover:bg-paper-alt transition-colors ${className}`}
-          aria-label="Theme selector"
-        >
+      <DropdownMenuTrigger
+        className={`relative flex h-8 w-8 items-center justify-center rounded-[8px] border border-border hover:bg-paper-alt transition-colors ${className}`}
+        aria-label="Theme selector"
+      >
           <AnimatePresence mode="wait" initial={false}>
             {isDark ? (
               <motion.div
@@ -115,7 +109,6 @@ export function ThemeToggle({ variant = "dropdown", className = "" }) {
               </motion.div>
             )}
           </AnimatePresence>
-        </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-36 p-1">
         <DropdownMenuItem

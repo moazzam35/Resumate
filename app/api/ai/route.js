@@ -130,7 +130,7 @@ export async function POST(request) {
           type: AI_TYPE_ALIASES[type] || type,
           input: JSON.stringify(data),
           output: typeof result === "string" ? result : JSON.stringify(result),
-          model: "llama-3.3-70b-versatile",
+          model: process.env.AI_MODEL || "meta-llama/llama-3.3-70b-instruct",
         },
       });
     }
@@ -142,7 +142,7 @@ export async function POST(request) {
     }
     console.error("AI generation error:", error);
     return NextResponse.json(
-      { success: false, message: "AI generation failed" },
+      { success: false, message: error.message || "AI generation failed" },
       { status: 500 }
     );
   }

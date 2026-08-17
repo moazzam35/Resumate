@@ -259,7 +259,7 @@ export async function POST(request) {
             suggestions,
             overallFeedback: ai?.summary || "Analysis complete.",
           }),
-          model: "llama-3.3-70b-versatile",
+          model: process.env.AI_MODEL || "meta-llama/llama-3.3-70b-instruct",
         },
       });
     }

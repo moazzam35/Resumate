@@ -14,7 +14,7 @@ export async function GET(request) {
     const settings = {
       siteName: process.env.SITE_NAME || SITE_CONFIG.name,
       siteUrl: process.env.NEXT_PUBLIC_SITE_URL || SITE_CONFIG.url,
-      aiModel: process.env.AI_MODEL || "llama-3.3-70b-versatile",
+      aiModel: process.env.AI_MODEL || "meta-llama/llama-3.3-70b-instruct",
       aiEnabled: process.env.AI_ENABLED !== "false",
       stripeEnabled: !!process.env.STRIPE_SECRET_KEY,
       emailEnabled: !!process.env.SMTP_HOST,

@@ -26,7 +26,7 @@ const itemVariants = {
 export default function HeroSection() {
   return (
     <section className="relative min-h-screen overflow-hidden bg-paper">
-      <div className="absolute inset-x-0 bottom-0 top-20">
+      <div className="absolute inset-x-0 bottom-0 top-20 pointer-events-none">
         <div className="hidden md:block w-full h-full">
           <HeroAnimation
             chrome={false}

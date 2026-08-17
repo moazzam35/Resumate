@@ -52,7 +52,7 @@ export default function AdminSettingsPage() {
   const [settings, setSettings] = useState({
     siteName: "",
     siteUrl: "",
-    aiModel: "llama-3.3-70b-versatile",
+    aiModel: "meta-llama/llama-3.3-70b-instruct",
     aiEnabled: true,
     stripeEnabled: false,
     emailEnabled: true,

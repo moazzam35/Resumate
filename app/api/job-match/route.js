@@ -236,7 +236,7 @@ export async function POST(request) {
           type: "ATS_KEYWORDS",
           input: JSON.stringify({ resumeContent: content.substring(0, 2000), jobDescription: jobDescription.substring(0, 2000) }),
           output: JSON.stringify(result),
-          model: "llama-3.3-70b-versatile",
+          model: process.env.AI_MODEL || "meta-llama/llama-3.3-70b-instruct",
         },
       });
     }

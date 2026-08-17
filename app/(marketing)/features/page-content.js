@@ -167,7 +167,7 @@ export default function FeaturesPage() {
                   Get Started Free
                 </Button>
               </Link>
-              <Link href="/templates">
+              <Link href="/dashboard/templates">
                 <Button size="lg" variant="outline">
                   Browse Templates
                 </Button>

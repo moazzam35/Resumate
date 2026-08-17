@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
@@ -26,12 +26,21 @@ const GoogleIcon = (props) => (
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login } = useAuthStore();
+  const { login, isAuthenticated, isLoading: authLoading, role } = useAuthStore();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+
+  // If a valid session is restored (e.g. the access token expired and was
+  // silently refreshed after the proxy bounced us here), send the user back
+  // to their home instead of making them sign in again.
+  useEffect(() => {
+    if (!authLoading && isAuthenticated) {
+      router.replace(role === "ADMIN" ? "/admin" : "/dashboard");
+    }
+  }, [authLoading, isAuthenticated, role, router]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

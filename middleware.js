@@ -22,7 +22,6 @@ const GUEST_ALLOWED_PAGES = [
   "/privacy",
   "/terms",
   "/security",
-  "/templates",
   "/help",
   "/support",
   "/pricing",
@@ -72,7 +71,7 @@ function isStaticAsset(pathname) {
     pathname.endsWith(".ico");
 }
 
-export async function proxy(request) {
+export async function middleware(request) {
   const { pathname } = request.nextUrl;
 
   if (isStaticAsset(pathname)) {

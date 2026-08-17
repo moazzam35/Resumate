@@ -6,7 +6,7 @@ const PORTFOLIO_URL = "https://moazzam35.github.io/portfolio/";
 
 const productLinks = [
   { label: "CV Builder", href: "/" },
-  { label: "Templates", href: "/templates" },
+  { label: "Templates", href: "/#templates" },
   { label: "Pricing", href: "/pricing" },
   { label: "Features", href: "/features" },
   { label: "ATS Checker", href: "/dashboard/ats-checker" },

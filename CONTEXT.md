@@ -28,7 +28,7 @@ App name: **Resumate** (see `lib/constants.js` → `SITE_CONFIG.name`).
 | State      | Zustand 5 (`store/index.js`)                                        |
 | Styling    | Tailwind 4 (`@tailwindcss/postcss`), Radix UI primitives, framer-motion, lucide-react |
 | Charts     | recharts                                                            |
-| AI         | Groq API, model `llama-3.3-70b-versatile` (`lib/ai.js`)             |
+| AI         | OpenRouter API, model `meta-llama/llama-3.3-70b-instruct` (`lib/ai.js`) |
 | Auth       | jose JWT (HS256), bcryptjs (cost 12)                                |
 | PDF/DOCX   | pdf-lib + pdfjs-dist (server), mammoth (DOCX import)                |
 | Uploads    | Cloudinary (`lib/upload.js`)                                        |
@@ -70,11 +70,11 @@ real values — do **not** copy values into code or docs.
 | `DATABASE_URL` | PostgreSQL connection string | ✅ |
 | `JWT_SECRET` | Access-token signing secret (≥32 chars) | ✅ |
 | `JWT_REFRESH_SECRET` | Refresh-token signing secret (≥32 chars) | ✅ |
-| `GROQ_API_KEY` | AI provider (Groq) | ✅ for AI features |
+| `OpenRouter_Api_Key` | AI provider (OpenRouter) | ✅ for AI features |
 | `NEXT_PUBLIC_APP_URL` | Canonical app URL (defaults localhost:3000) | |
 | `NEXT_PUBLIC_SITE_URL` | Site URL (admin settings read it) | |
 | `SITE_NAME` | Overrides brand name | |
-| `AI_MODEL` | Default `llama-3.3-70b-versatile` | |
+| `AI_MODEL` | Default `meta-llama/llama-3.3-70b-instruct` | |
 | `AI_ENABLED` | `"false"` disables AI | |
 | `STRIPE_SECRET_KEY` | **Not wired up** — presence only toggles a settings flag | |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_SECURE`, `SMTP_FROM` | nodemailer | |

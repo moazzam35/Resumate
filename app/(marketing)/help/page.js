@@ -81,7 +81,7 @@ const resources = [
     icon: LayoutTemplate,
     title: "Templates",
     description: "Browse our ATS-friendly resume templates and previews.",
-    href: "/templates",
+    href: "/#templates",
   },
   {
     icon: CreditCard,

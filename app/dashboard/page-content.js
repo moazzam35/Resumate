@@ -159,7 +159,7 @@ export default function DashboardPage() {
                 Scan ATS Score
               </Button>
             </Link>
-            <Link href="/templates">
+            <Link href="/dashboard/templates">
               <Button size="sm" variant="primary" leftIcon={LayoutTemplate} className="w-full justify-center">
                 Templates
               </Button>

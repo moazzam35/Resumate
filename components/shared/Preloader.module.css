@@ -6,6 +6,11 @@
   align-items: center;
   justify-content: center;
   background: var(--paper, #f5f6f1);
+  /* The splash is purely visual — never block taps/clicks on the page that
+     is already rendered and hydrated behind it. Without this, every button
+     and link on the site is unresponsive for the splash's whole duration on
+     each page load (especially noticeable on mobile). */
+  pointer-events: none;
 }
 
 .stack {

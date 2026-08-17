@@ -159,7 +159,7 @@ export default function TemplatesSection() {
           transition={{ duration: 0.5, delay: 0.5 }}
           className="text-center mt-10"
         >
-          <Link href="/templates">
+          <Link href="/dashboard/templates">
             <Button variant="outline" size="lg" rightIcon={ArrowRight}>
               View All Templates
             </Button>

@@ -16,27 +16,50 @@ const BADGES = [
 /* =====================================================================
    Frame preload cache (module scope).
 
-   - Dedupes in-flight requests: the same URL shares a single Image object,
-     so switching desktop <-> mobile (or navigating back to the page) never
+   - Dedupes in-flight requests: the same URL shares a single decode, so
+     switching desktop <-> mobile (or navigating back to the page) never
      re-downloads frames the browser has already delivered this session.
+   - Frames are decoded with `createImageBitmap` where available, which keeps
+     PNG/WebP decode off the main thread. Decoding 141 × 720×1280 PNGs is
+     what dominates the hero's main-thread blocking time on mobile (the
+     Lighthouse mobile run measured ~127s of total blocking time, almost all
+     of it frame decode). Browsers without `createImageBitmap` fall back to
+     an <img> element with async decoding.
    - Failed frames are cached as `null` so a 404 is not retried endlessly.
-   - The returned promise resolves with the Image (usable directly by the
-     canvas renderer) or `null` on failure — never rejects.
+   - The returned promise resolves with the bitmap/Image (usable directly by
+     the canvas renderer) or `null` on failure — never rejects.
    ===================================================================== */
 const FRAME_CACHE = new Map();
 
 function loadFrame(url) {
   let pending = FRAME_CACHE.get(url);
   if (pending) return pending;
+
+  const viaImage = () =>
+    new Promise((resolve) => {
+      const img = new Image();
+      img.decoding = "async";
+      img.onload = () => resolve(img);
+      img.onerror = () => {
+        console.error(`[HeroAnimation] failed to load frame: ${url}`);
+        resolve(null);
+      };
+      img.src = url;
+    });
+
   pending = new Promise((resolve) => {
-    const img = new Image();
-    img.decoding = "async";
-    img.onload = () => resolve(img);
-    img.onerror = () => {
-      console.error(`[HeroAnimation] failed to load frame: ${url}`);
-      resolve(null);
-    };
-    img.src = url;
+    if (typeof createImageBitmap === "function") {
+      fetch(url)
+        .then((res) => {
+          if (!res.ok) throw new Error(`frame fetch failed: ${url}`);
+          return res.blob();
+        })
+        .then((blob) => createImageBitmap(blob))
+        .then((bitmap) => resolve(bitmap))
+        .catch(() => viaImage().then(resolve));
+    } else {
+      viaImage().then(resolve);
+    }
   });
   FRAME_CACHE.set(url, pending);
   return pending;
@@ -53,6 +76,13 @@ const CRITICAL_FRAMES_DESKTOP = 8;
 const CRITICAL_FRAMES_MOBILE = 4;
 const START_TIMEOUT_MS = 6000;
 const HARD_TIMEOUT_MS = 12000;
+
+/* Render at most this many device pixels per CSS pixel. The source frames
+   cap the real sharpness (mobile frames are 720px wide), so rendering a 3×
+   DPR phone's hero at 1170px+ just upscales 720px art while tripling the
+   GPU fill cost. Capping at 2× keeps the canvas at ~the source resolution
+   with no visible quality loss. */
+const MAX_DEVICE_PIXEL_RATIO = 2;
 
 export default function HeroAnimation({
   folder = "/frames",
@@ -184,33 +214,36 @@ export default function HeroAnimation({
   const fitMode = fit;
 
   const drawFrame = useCallback((ctx, img, w, h, alpha, driftX, driftY, currentFit) => {
-    if (!img || !img.naturalWidth) return;
-    const imgAspect = img.naturalWidth / img.naturalHeight;
+    // `img` may be an Image (naturalWidth) or an ImageBitmap (width).
+    const iw = img.naturalWidth || img.width;
+    const ih = img.naturalHeight || img.height;
+    if (!img || !iw || !ih) return;
+    const imgAspect = iw / ih;
     const canvasAspect = w / h;
 
     if (currentFit === "contain") {
-      const scale = Math.min(w / img.naturalWidth, h / img.naturalHeight);
-      const dw = img.naturalWidth * scale;
-      const dh = img.naturalHeight * scale;
+      const scale = Math.min(w / iw, h / ih);
+      const dw = iw * scale;
+      const dh = ih * scale;
       ctx.save();
       ctx.globalAlpha = alpha;
-      ctx.drawImage(img, 0, 0, img.naturalWidth, img.naturalHeight, (w - dw) / 2, (h - dh) / 2, dw, dh);
+      ctx.drawImage(img, 0, 0, iw, ih, (w - dw) / 2, (h - dh) / 2, dw, dh);
       ctx.restore();
       return;
     }
 
     let sx, sy, sw, sh;
     if (imgAspect > canvasAspect) {
-      sh = img.naturalHeight;
+      sh = ih;
       sw = sh * canvasAspect;
       sy = 0;
-      const slack = img.naturalWidth - sw;
+      const slack = iw - sw;
       sx = slack / 2 + (driftX * slack) / 2;
     } else {
-      sw = img.naturalWidth;
+      sw = iw;
       sh = sw / canvasAspect;
       sx = 0;
-      const slack = img.naturalHeight - sh;
+      const slack = ih - sh;
       sy = slack / 2 + (driftY * slack) / 2;
     }
     ctx.save();
@@ -242,7 +275,7 @@ export default function HeroAnimation({
     function resize() {
       const rect = container.getBoundingClientRect();
       if (rect.width === 0 || rect.height === 0) return;
-      dprRef.current = window.devicePixelRatio || 1;
+      dprRef.current = Math.min(window.devicePixelRatio || 1, MAX_DEVICE_PIXEL_RATIO);
       canvas.width = Math.round(rect.width * dprRef.current);
       canvas.height = Math.round(rect.height * dprRef.current);
       canvas.style.width = `${rect.width}px`;
@@ -324,12 +357,38 @@ export default function HeroAnimation({
       }
     }
 
+    // Pause the loop entirely while the hero is off-screen (scrolled away, or
+    // the desktop/mobile instance hidden at a breakpoint). The wrap-around
+    // loop is seamless, so restarting from frame 0 on re-entry is invisible
+    // and saves all compositing/draw work during scroll.
+    let inView = true;
+    let io = null;
+    if (typeof IntersectionObserver === "function") {
+      io = new IntersectionObserver(
+        (entries) => {
+          const visible = entries[entries.length - 1]?.isIntersecting;
+          if (visible && !inView) {
+            inView = true;
+            startTime = 0;
+            raf = requestAnimationFrame(render);
+          } else if (!visible && inView) {
+            inView = false;
+            if (raf) cancelAnimationFrame(raf);
+            raf = null;
+          }
+        },
+        { threshold: 0 }
+      );
+      io.observe(container);
+    }
+
     document.addEventListener("visibilitychange", onVisibilityChange);
     raf = requestAnimationFrame(render);
 
     return () => {
       window.removeEventListener("resize", resize);
       document.removeEventListener("visibilitychange", onVisibilityChange);
+      if (io) io.disconnect();
       if (raf) cancelAnimationFrame(raf);
     };
   }, [ready, frameDuration, drawFrame, fitMode]);

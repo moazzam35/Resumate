@@ -13,6 +13,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { post } from "@/lib/api";
 import { Skeleton } from "@/components/shared/loading-skeleton";
+import { useSubscription } from "@/hooks";
+import { UpgradePromptModal } from "@/components/features/billing/upgrade-prompt-modal";
 
 
 export default function NewResumePage() {
@@ -20,20 +22,41 @@ export default function NewResumePage() {
   const searchParams = useSearchParams();
   const [isCreating, setIsCreating] = useState(true);
   const [error, setError] = useState(null);
+  const [showUpgrade, setShowUpgrade] = useState(false);
+  const { atResumeLimit, isEnterprise } = useSubscription();
+  const resumeAtLimit = atResumeLimit && !isEnterprise;
 
   useEffect(() => {
     async function create() {
+      // Gate the limit client-side like the dashboard create flows so capped
+      // users see the friendly upgrade prompt instead of a raw server error.
+      if (resumeAtLimit) {
+        setIsCreating(false);
+        setShowUpgrade(true);
+        return;
+      }
       try {
         const template = searchParams.get("template") || "modern";
         const data = await post("/resumes", { title: "Untitled Resume", template });
         router.replace(`/resume/${data.resume.id}`);
       } catch (err) {
+        // Fallback for a server-side 403 limit response (e.g. stale client usage).
+        if ((err.message || "").includes("resume limit")) {
+          setIsCreating(false);
+          setShowUpgrade(true);
+          return;
+        }
         setError(err.message || "Failed to create resume");
         setIsCreating(false);
       }
     }
     create();
-  }, [router, searchParams]);
+  }, [router, searchParams, resumeAtLimit]);
+
+  const closeUpgrade = (open) => {
+    setShowUpgrade(open);
+    if (!open) router.push("/dashboard");
+  };
 
   if (error) {
     return (
@@ -72,6 +95,7 @@ export default function NewResumePage() {
           </CardContent>
         </Card>
       </motion.div>
+      <UpgradePromptModal open={showUpgrade} onOpenChange={closeUpgrade} kind="resume" />
     </div>
   );
 }

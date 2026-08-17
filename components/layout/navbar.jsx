@@ -239,31 +239,23 @@ export default function Navbar() {
                       </div>
                       <DropdownMenuSeparator />
                       {isAdmin ? (
-                        <DropdownMenuItem asChild>
-                          <Link href="/admin" className="cursor-pointer text-xs">
-                            <Shield className="mr-2 h-3.5 w-3.5" />
-                            Admin Dashboard
-                          </Link>
+                        <DropdownMenuItem onClick={() => router.push("/admin")} className="cursor-pointer text-xs">
+                          <Shield className="mr-2 h-3.5 w-3.5" />
+                          Admin Dashboard
                         </DropdownMenuItem>
                       ) : (
                         <>
-                          <DropdownMenuItem asChild>
-                            <Link href="/dashboard" className="cursor-pointer text-xs">
-                              <LayoutDashboard className="mr-2 h-3.5 w-3.5" />
-                              Dashboard
-                            </Link>
+                          <DropdownMenuItem onClick={() => router.push("/dashboard")} className="cursor-pointer text-xs">
+                            <LayoutDashboard className="mr-2 h-3.5 w-3.5" />
+                            Dashboard
                           </DropdownMenuItem>
-                          <DropdownMenuItem asChild>
-                            <Link href="/dashboard/profile" className="cursor-pointer text-xs">
-                              <User className="mr-2 h-3.5 w-3.5" />
-                              Profile
-                            </Link>
+                          <DropdownMenuItem onClick={() => router.push("/dashboard/profile")} className="cursor-pointer text-xs">
+                            <User className="mr-2 h-3.5 w-3.5" />
+                            Profile
                           </DropdownMenuItem>
-                          <DropdownMenuItem asChild>
-                            <Link href="/dashboard/settings" className="cursor-pointer text-xs">
-                              <Settings className="mr-2 h-3.5 w-3.5" />
-                              Settings
-                            </Link>
+                          <DropdownMenuItem onClick={() => router.push("/dashboard/settings")} className="cursor-pointer text-xs">
+                            <Settings className="mr-2 h-3.5 w-3.5" />
+                            Settings
                           </DropdownMenuItem>
                         </>
                       )}

@@ -71,7 +71,7 @@ export default function LiveDemoSection() {
               transition={{ duration: 0.5, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
               className="mt-8"
             >
-              <Link href="/templates">
+              <Link href="/dashboard/templates">
                 <Button size="lg" className="w-full sm:w-auto" rightIcon={ArrowRight}>
                   Browse Templates
                 </Button>

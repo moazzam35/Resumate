@@ -157,7 +157,7 @@ export async function POST(request) {
               scoreIncrease: result.scoreIncrease,
               appliesTo,
             }),
-            model: "llama-3.3-70b-versatile",
+            model: process.env.AI_MODEL || "meta-llama/llama-3.3-70b-instruct",
           },
         });
       } catch (err) {
