@@ -24,7 +24,6 @@ export const metadata = {
     images: ["/twitter-image"],
     title: "Page Not Found – Resumate",
     description: "The page you are looking for does not exist or has been moved.",
-    creator: "@airesumebuilder",
   },
   alternates: {
     canonical: "/404",

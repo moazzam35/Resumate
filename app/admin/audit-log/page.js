@@ -24,7 +24,6 @@ export const metadata = {
     images: ["/twitter-image"],
     title: "Audit Log – Resumate",
     description: "Review security and administrative actions recorded in the Resumate audit log.",
-    creator: "@airesumebuilder",
   },
   alternates: {
     canonical: "/admin/audit-log",

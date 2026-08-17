@@ -87,7 +87,7 @@ export default function FeaturesPage() {
   return (
     <div className="min-h-screen bg-paper">
       <section className="relative overflow-hidden px-4 pb-20 pt-28 sm:px-6 lg:px-8">
-        <div className="absolute inset-0 dot-pattern opacity-30" />
+        <div className="absolute inset-0 bg-gradient-to-br from-stamp/5 via-transparent to-stamp/5" />
         <div className="relative mx-auto max-w-7xl">
           <motion.div
             initial={{ opacity: 0, y: 12 }}

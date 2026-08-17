@@ -24,7 +24,6 @@ export const metadata = {
     images: ["/twitter-image"],
     title: "Resume Templates – Resumate",
     description: "Browse professional ATS-friendly resume templates and pick the perfect design for your job search.",
-    creator: "@airesumebuilder",
   },
   alternates: {
     canonical: "/dashboard/templates",

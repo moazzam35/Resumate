@@ -25,7 +25,6 @@ export const metadata = {
     images: ["/twitter-image"],
     title: "Reset Password – Resumate",
     description: "Set a new password for your Resumate account.",
-    creator: "@airesumebuilder",
   },
   alternates: {
     canonical: "/reset-password",

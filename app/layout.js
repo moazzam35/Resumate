@@ -1,6 +1,7 @@
 import { ThemeProvider } from "@/components/theme-provider";
 import { AuthInitializer } from "@/components/auth-initializer";
 import { Toast } from "@/components/toast";
+import Preloader from "@/components/shared/preloader";
 import StructuredData from "@/components/seo/structured-data";
 import { Fraunces, IBM_Plex_Mono, Public_Sans, Space_Grotesk } from "next/font/google";
 import { SITE_CONFIG } from "@/lib/constants";
@@ -89,7 +90,6 @@ export const metadata = {
     description:
       "Build ATS-friendly resumes with AI, improve your resume score, generate cover letters, and prepare for interviews.",
     images: ["/twitter-image"],
-    creator: "@airesumebuilder",
   },
   icons: {
     icon: "/favicon.svg",
@@ -145,6 +145,7 @@ export default function RootLayout({ children }) {
           disableTransitionOnChange
         >
           <AuthInitializer>
+            <Preloader />
             {children}
             <Toast />
           </AuthInitializer>

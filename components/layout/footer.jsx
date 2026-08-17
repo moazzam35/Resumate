@@ -1,12 +1,72 @@
 import Link from "next/link";
-import { FileText, ExternalLink } from "lucide-react";
+import { FileText } from "lucide-react";
 import { SITE_CONFIG } from "@/lib/constants";
+
+const PORTFOLIO_URL = "https://moazzam35.github.io/portfolio/";
+
+const productLinks = [
+  { label: "CV Builder", href: "/" },
+  { label: "Templates", href: "/templates" },
+  { label: "Pricing", href: "/pricing" },
+  { label: "Features", href: "/features" },
+  { label: "ATS Checker", href: "/dashboard/ats-checker" },
+  { label: "Cover Letters", href: "/dashboard/cover-letters" },
+];
+
+const resourceLinks = [
+  { label: "Career Blog", href: "/blog" },
+  { label: "Help Center", href: "/help" },
+  { label: "FAQ", href: "/faq" },
+];
+
+const companyLinks = [
+  { label: "About Us", href: "/about" },
+  { label: "Contact Us", href: "/contact" },
+  { label: "Security", href: "/security" },
+];
+
+const legalLinks = [
+  { label: "Privacy Policy", href: "/privacy" },
+  { label: "Terms of Service", href: "/terms" },
+];
+
+const developerLinks = [
+  { label: "Moazzam Pasha", href: PORTFOLIO_URL, external: true },
+];
+
+function FooterColumn({ title, links }) {
+  return (
+    <div className="space-y-3">
+      <h4 className="text-[10px] font-semibold uppercase tracking-wider text-ink font-mono">{title}</h4>
+      <ul className="space-y-2 text-xs text-muted">
+        {links.map((link) => (
+          <li key={link.href + link.label}>
+            {link.external ? (
+              <a
+                href={link.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-ink transition-colors"
+              >
+                {link.label}
+              </a>
+            ) : (
+              <Link href={link.href} className="hover:text-ink transition-colors">
+                {link.label}
+              </Link>
+            )}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
 
 export default function Footer() {
   return (
     <footer className="border-t border-border bg-paper-alt py-12">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-8 mb-10">
+        <div className="grid grid-cols-2 gap-8 mb-10 md:grid-cols-3 lg:grid-cols-7">
           {/* BRAND COLUMN */}
           <div className="col-span-2 space-y-3">
             <Link href="/" className="flex items-center gap-2">
@@ -25,36 +85,19 @@ export default function Footer() {
           </div>
 
           {/* PRODUCT */}
-          <div className="space-y-3">
-            <h4 className="text-[10px] font-semibold uppercase tracking-wider text-ink font-mono">Product</h4>
-            <ul className="space-y-2 text-xs text-muted">
-              <li><Link href="/templates" className="hover:text-ink transition-colors">Templates Gallery</Link></li>
-              <li><Link href="/dashboard/ats-checker" className="hover:text-ink transition-colors">ATS Checker</Link></li>
-              <li><Link href="/dashboard/cover-letters" className="hover:text-ink transition-colors">Cover Letters</Link></li>
-              <li><Link href="/#pricing" className="hover:text-ink transition-colors">Pricing Plans</Link></li>
-            </ul>
-          </div>
+          <FooterColumn title="Product" links={productLinks} />
 
           {/* RESOURCES */}
-          <div className="space-y-3">
-            <h4 className="text-[10px] font-semibold uppercase tracking-wider text-ink font-mono">Resources</h4>
-            <ul className="space-y-2 text-xs text-muted">
-              <li><Link href="/blog" className="hover:text-ink transition-colors">Career Blog</Link></li>
-              <li><Link href="/faq" className="hover:text-ink transition-colors">FAQ & Support</Link></li>
-              <li><Link href="/about" className="hover:text-ink transition-colors">About Resumate</Link></li>
-              <li><Link href="/contact" className="hover:text-ink transition-colors">Contact Us</Link></li>
-            </ul>
-          </div>
+          <FooterColumn title="Resources" links={resourceLinks} />
+
+          {/* COMPANY */}
+          <FooterColumn title="Company" links={companyLinks} />
 
           {/* LEGAL */}
-          <div className="space-y-3">
-            <h4 className="text-[10px] font-semibold uppercase tracking-wider text-ink font-mono">Legal</h4>
-            <ul className="space-y-2 text-xs text-muted">
-              <li><Link href="/privacy" className="hover:text-ink transition-colors">Privacy Policy</Link></li>
-              <li><Link href="/terms" className="hover:text-ink transition-colors">Terms of Service</Link></li>
-              <li><Link href="/security" className="hover:text-ink transition-colors">Security Overview</Link></li>
-            </ul>
-          </div>
+          <FooterColumn title="Legal" links={legalLinks} />
+
+          {/* DEVELOPER */}
+          <FooterColumn title="Developer" links={developerLinks} />
         </div>
 
         {/* BOTTOM BAR */}
@@ -68,9 +111,6 @@ export default function Footer() {
               <FileText className="h-3.5 w-3.5" />
               Blog
             </Link>
-            <a href="https://github.com" target="_blank" rel="noreferrer" aria-label="Resumate on GitHub" className="hover:text-ink transition-colors">
-              <ExternalLink className="h-3.5 w-3.5" />
-            </a>
           </div>
         </div>
       </div>

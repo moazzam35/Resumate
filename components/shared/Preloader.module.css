@@ -1,0 +1,245 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--paper, #f5f6f1);
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+
+.brand {
+  font-family: var(--next-font-display), serif;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--ink, #1c2430);
+  letter-spacing: -0.02em;
+  animation: slideInUp 0.5s 0.08s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.docWrap {
+  width: 180px;
+  height: 225px;
+  animation: slideInUp 0.5s 0.2s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.doc {
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 4px 24px rgba(0, 0, 0, 0.08));
+}
+
+.pageFill {
+  fill: #fff;
+  opacity: 0;
+  animation: fadeIn 0.3s 0.2s ease forwards;
+}
+
+.pageOutline {
+  fill: none;
+  stroke: var(--border, #d8d3c7);
+  stroke-width: 1.2;
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  animation: drawBorder 0.8s 0.2s ease forwards;
+}
+
+.avatar {
+  fill: var(--stamp, #2e4374);
+  opacity: 0;
+}
+
+.nameBar,
+.subtitleBar,
+.tag {
+  opacity: 0;
+}
+
+.divider {
+  fill: var(--border, #d8d3c7);
+  opacity: 0;
+}
+
+.bodyLine {
+  fill: var(--border, #d8d3c7);
+  opacity: 0;
+}
+
+.pill {
+  fill: var(--stamp, #2e4374);
+  opacity: 0;
+}
+
+.finishGlow {
+  fill: none;
+  opacity: 0;
+}
+
+.caption {
+  font-size: 14px;
+  color: var(--ink-soft, #3d4657);
+  animation: slideInUp 0.5s 0.3s cubic-bezier(0.16, 1, 0.3, 1) both,
+             pulse 1.4s 1.3s ease-in-out infinite;
+}
+
+/* ── Entrance keyframes ── */
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ── Existing SVG element animations (unchanged) ── */
+
+@keyframes fadeIn {
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes drawBorder {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.animPop {
+  animation: popIn 0.35s var(--d, 0s) ease forwards;
+}
+
+.animReveal {
+  animation: reveal 0.3s var(--d, 0s) ease forwards;
+}
+
+.animGrow {
+  animation: grow 0.3s var(--d, 0s) ease forwards;
+}
+
+@keyframes popIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes reveal {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes grow {
+  0% {
+    opacity: 0;
+    transform: scaleX(0);
+    transform-origin: left center;
+  }
+  100% {
+    opacity: 1;
+    transform: scaleX(1);
+    transform-origin: left center;
+  }
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+/* ── Exit cascade ── */
+
+.overlay[data-state='exiting'] {
+  pointer-events: none;
+  animation: overlayOut 0.3s 0.18s cubic-bezier(0.4, 0, 1, 1) both;
+}
+
+.overlay[data-state='exiting'] .brand {
+  animation: cascadeOut 0.2s 0s cubic-bezier(0.4, 0, 1, 1) both;
+}
+
+.overlay[data-state='exiting'] .docWrap {
+  animation: cascadeOut 0.2s 0.05s cubic-bezier(0.4, 0, 1, 1) both;
+}
+
+.overlay[data-state='exiting'] .caption {
+  animation: cascadeOut 0.2s 0.1s cubic-bezier(0.4, 0, 1, 1) both;
+}
+
+@keyframes cascadeOut {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes overlayOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+/* ── Reduced motion ── */
+
+@media (prefers-reduced-motion: reduce) {
+  .brand,
+  .docWrap,
+  .caption {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  .pageOutline,
+  .animPop,
+  .animReveal,
+  .animGrow {
+    animation: fadeIn 0.2s ease forwards !important;
+  }
+
+  .overlay[data-state='exiting'],
+  .overlay[data-state='exiting'] .brand,
+  .overlay[data-state='exiting'] .docWrap,
+  .overlay[data-state='exiting'] .caption {
+    animation: simpleFadeOut 0.15s ease both !important;
+  }
+}
+
+@keyframes simpleFadeOut {
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}

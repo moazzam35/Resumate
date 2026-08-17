@@ -24,7 +24,6 @@ export const metadata = {
     images: ["/twitter-image"],
     title: "Payments – Resumate",
     description: "Manage subscriptions, payments, and billing records for all Resumate users.",
-    creator: "@airesumebuilder",
   },
   alternates: {
     canonical: "/admin/payments",

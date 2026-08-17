@@ -27,7 +27,6 @@ export async function generateMetadata({ params }) {
       images: ["/twitter-image"],
       title: "User Details – Resumate",
       description: "View and manage an individual user account, subscription, and activity on Resumate.",
-      creator: "@airesumebuilder",
     },
     alternates: {
       canonical: `/admin/users/${id}`,

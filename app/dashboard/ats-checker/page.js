@@ -24,7 +24,6 @@ export const metadata = {
     images: ["/twitter-image"],
     title: "ATS Resume Checker – Resumate",
     description: "Run a free ATS resume check to find keyword gaps, improve your score, and get hired faster with Resumate.",
-    creator: "@airesumebuilder",
   },
   alternates: {
     canonical: "/dashboard/ats-checker",

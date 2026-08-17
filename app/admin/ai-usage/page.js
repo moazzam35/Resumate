@@ -24,7 +24,6 @@ export const metadata = {
     images: ["/twitter-image"],
     title: "AI Usage – Resumate",
     description: "Monitor AI usage, credits, and API consumption across your Resumate platform.",
-    creator: "@airesumebuilder",
   },
   alternates: {
     canonical: "/admin/ai-usage",

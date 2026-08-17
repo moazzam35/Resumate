@@ -24,7 +24,6 @@ export const metadata = {
     images: ["/twitter-image"],
     title: "Cover Letters – Resumate",
     description: "Create, edit, and manage professional AI-generated cover letters that match your resume.",
-    creator: "@airesumebuilder",
   },
   alternates: {
     canonical: "/dashboard/cover-letters",

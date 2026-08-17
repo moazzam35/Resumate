@@ -63,11 +63,6 @@ export default function GlobalError({ error, unstable_retry }) {
             </button>
           </div>
         </div>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `console.error(${JSON.stringify(String(error?.message || "Unknown error"))});`,
-          }}
-        />
       </body>
     </html>
   );

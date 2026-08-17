@@ -1,3 +1,6 @@
+'use client';
+
+import { useEffect } from 'react';
 import { SITE_CONFIG } from "@/lib/constants";
 
 const baseUrl = SITE_CONFIG.url.replace(/\/$/, "");
@@ -23,7 +26,7 @@ const structuredData = {
       contactPoint: {
         "@type": "ContactPoint",
         contactType: "customer support",
-        email: "support@resumate.app",
+        email: "moazzampasha356@gmail.com",
       },
     },
     {
@@ -55,12 +58,16 @@ const structuredData = {
 };
 
 export default function StructuredData() {
-  return (
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{
-        __html: JSON.stringify(structuredData).replace(/</g, "\\u003c"),
-      }}
-    />
-  );
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.type = 'application/ld+json';
+    script.id = 'structured-data';
+    script.textContent = JSON.stringify(structuredData).replace(/</g, "\\u003c");
+    document.head.appendChild(script);
+    return () => {
+      document.getElementById('structured-data')?.remove();
+    };
+  }, []);
+
+  return null;
 }

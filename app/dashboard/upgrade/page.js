@@ -24,7 +24,6 @@ export const metadata = {
     images: ["/twitter-image"],
     title: "Upgrade to Pro – Resumate",
     description: "Upgrade your Resumate plan to unlock premium templates, unlimited AI features, and more.",
-    creator: "@airesumebuilder",
   },
   alternates: {
     canonical: "/dashboard/upgrade",

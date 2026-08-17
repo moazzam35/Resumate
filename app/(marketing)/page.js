@@ -52,7 +52,6 @@ export const metadata = {
     title: "Resumate – AI Resume Builder",
     description:
       "Build ATS-friendly resumes with AI, improve your resume score, generate cover letters, and prepare for interviews.",
-    creator: "@airesumebuilder",
   },
   alternates: {
     canonical: "/",

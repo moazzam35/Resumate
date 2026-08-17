@@ -24,7 +24,6 @@ export const metadata = {
     images: ["/twitter-image"],
     title: "Notifications – Resumate",
     description: "Manage your Resumate notifications, alerts, and activity updates in one place.",
-    creator: "@airesumebuilder",
   },
   alternates: {
     canonical: "/dashboard/notifications",

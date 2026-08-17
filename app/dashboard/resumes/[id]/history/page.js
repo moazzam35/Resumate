@@ -27,7 +27,6 @@ export async function generateMetadata({ params }) {
       images: ["/twitter-image"],
       title: "Resume Version History – Resumate",
       description: "Track changes to your resume and restore previous versions anytime.",
-      creator: "@airesumebuilder",
     },
     alternates: {
       canonical: `/dashboard/resumes/${id}/history`,

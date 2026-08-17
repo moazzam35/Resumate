@@ -27,7 +27,6 @@ export async function generateMetadata({ params }) {
       images: ["/twitter-image"],
       title: "Resume Editor – Resumate",
       description: "Edit and optimize your ATS-friendly resume with AI-powered assistance.",
-      creator: "@airesumebuilder",
     },
     alternates: {
       canonical: `/resume/${id}`,

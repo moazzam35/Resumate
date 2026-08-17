@@ -24,7 +24,6 @@ export const metadata = {
     images: ["/twitter-image"],
     title: "My Resumes – Resumate",
     description: "Create, edit, and manage all your ATS-friendly resumes in one place with Resumate.",
-    creator: "@airesumebuilder",
   },
   alternates: {
     canonical: "/dashboard/resumes",

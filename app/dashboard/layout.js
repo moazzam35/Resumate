@@ -20,15 +20,15 @@ import {
   BarChart3,
   MessageSquareText,
   Bell,
-  Command,
   Sparkles,
   Menu,
   X,
+  BookOpen,
+  CircleHelp,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
-import { CommandPalette } from "@/components/shared/command-palette";
 import { useAuthStore } from "@/store";
 import { cn, getInitials } from "@/lib/utils";
 import { SITE_CONFIG } from "@/lib/constants";
@@ -42,6 +42,8 @@ const sidebarLinks = [
   { label: "Job Match", href: "/dashboard/job-match", icon: GitCompareArrows },
   { label: "Analytics", href: "/dashboard/analytics", icon: BarChart3 },
   { label: "Interview Prep", href: "/dashboard/interview", icon: MessageSquareText },
+  { label: "Blog", href: "/dashboard/blog", icon: BookOpen },
+  { label: "Help & Support", href: "/dashboard/support", icon: CircleHelp },
 ];
 
 const bottomLinks = [
@@ -64,13 +66,13 @@ function NavLink({ link, pathname, collapsed, onNavigate }) {
       className={cn(
         "relative flex items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors",
         isActive
-          ? "bg-black/5 text-ink dark:bg-white/10 font-semibold"
+          ? "bg-primary text-primary-foreground"
           : "text-muted hover:text-ink hover:bg-black/5 dark:hover:bg-white/5",
         collapsed && "justify-center"
       )}
       title={collapsed ? link.label : undefined}
     >
-      <Icon className="h-3.5 w-3.5 shrink-0" />
+      <Icon className={cn("h-3.5 w-3.5 shrink-0", isActive && "text-primary-foreground")} />
       {!collapsed && <span className="flex-1 truncate">{link.label}</span>}
     </Link>
   );
@@ -133,7 +135,6 @@ export default function DashboardLayout({ children }) {
   const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [cmdPaletteOpen, setCmdPaletteOpen] = useState(false);
   const { user, isAuthenticated, isLoading, role, logout } = useAuthStore();
   const isAdmin = role === "ADMIN";
   const isPremium = user?.subscription?.plan === "PRO" || user?.subscription?.plan === "ENTERPRISE";
@@ -257,16 +258,7 @@ export default function DashboardLayout({ children }) {
               </div>
 
               <div className="flex shrink-0 items-center gap-2 border-b border-border px-3 py-2.5">
-                <button
-                  onClick={() => {
-                    setSidebarOpen(false);
-                    setCmdPaletteOpen(true);
-                  }}
-                  className="flex h-9 min-w-0 flex-1 items-center gap-2 rounded-md border border-border bg-paper px-2.5 text-xs text-muted hover:text-ink transition-colors"
-                >
-                  <Command className="h-3.5 w-3.5 shrink-0" />
-                  <span className="truncate">Search...</span>
-                </button>
+                <div className="flex-1" />
                 <ThemeToggle />
                 <Link
                   href="/dashboard/notifications"
@@ -305,15 +297,6 @@ export default function DashboardLayout({ children }) {
 
           <div className="flex shrink-0 items-center gap-2">
             <div className="hidden items-center gap-2 md:flex">
-              <button
-                onClick={() => setCmdPaletteOpen(true)}
-                className="inline-flex items-center justify-center gap-2 rounded-md border border-border bg-paper-alt px-2.5 py-1.5 text-xs text-muted hover:text-ink hover:bg-paper transition-colors"
-              >
-                <Command className="h-3.5 w-3.5 shrink-0" />
-                <span className="text-[11px] font-medium leading-none hidden sm:inline">Search...</span>
-                <kbd className="inline-flex items-center rounded-sm border border-border bg-paper px-1 text-[9px] font-mono-data leading-none">⌘K</kbd>
-              </button>
-
               <ThemeToggle />
 
                 <Link
@@ -348,8 +331,6 @@ export default function DashboardLayout({ children }) {
 
         <div className="mx-auto w-full max-w-7xl flex-1 p-4 sm:p-6">{children}</div>
       </main>
-
-      <CommandPalette open={cmdPaletteOpen} setOpen={setCmdPaletteOpen} />
     </div>
   );
 }

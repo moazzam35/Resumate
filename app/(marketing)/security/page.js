@@ -30,7 +30,6 @@ export const metadata = {
     title: "Security Overview – Resumate",
     description:
       "How Resumate protects your data with encryption, secure authentication, rate limiting, and proactive monitoring.",
-    creator: "@airesumebuilder",
   },
   alternates: {
     canonical: "/security",
@@ -86,7 +85,7 @@ const items = [
     icon: "Radar",
     body: [
       "Errors are logged and reviewed to detect anomalies.",
-      "We follow responsible disclosure practices. If you discover a vulnerability, report it to security@resumate.app.",
+      "We follow responsible disclosure practices. If you discover a vulnerability, report it to moazzampasha356@gmail.com.",
     ],
   },
 ];

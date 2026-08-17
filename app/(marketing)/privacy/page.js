@@ -31,7 +31,6 @@ export const metadata = {
     title: "Privacy Policy – Resumate",
     description:
       "How Resumate collects, uses, and protects your personal information.",
-    creator: "@airesumebuilder",
   },
   alternates: {
     canonical: "/privacy",
@@ -106,7 +105,7 @@ const sections = [
   {
     title: "Contact Us",
     body: [
-      "If you have questions about this Privacy Policy or how your data is handled, contact us at support@resumate.app.",
+      "If you have questions about this Privacy Policy or how your data is handled, contact us at moazzampasha356@gmail.com.",
       "We may update this policy from time to time. We will notify you of material changes by posting the updated policy on this page.",
     ],
   },

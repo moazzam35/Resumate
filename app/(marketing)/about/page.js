@@ -33,7 +33,6 @@ export const metadata = {
     title: "About Us – AI Resume Builder | Resumate",
     description:
       "Learn about Resumate, our mission to democratize career tools with AI-powered resume building, ATS checking, and interview preparation.",
-    creator: "@airesumebuilder",
   },
   alternates: {
     canonical: "/about",

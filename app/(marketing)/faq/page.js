@@ -39,7 +39,6 @@ export const metadata = {
     title: "FAQ – AI Resume Builder & ATS Checker | Resumate",
     description:
       "Frequently asked questions about Resumate. Find answers to common questions about our features, pricing, and more.",
-    creator: "@airesumebuilder",
   },
   alternates: {
     canonical: "/faq",

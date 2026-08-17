@@ -24,7 +24,6 @@ export const metadata = {
     images: ["/twitter-image"],
     title: "Create New Resume – Resumate",
     description: "Create a new ATS-optimized resume using AI-powered assistance.",
-    creator: "@airesumebuilder",
   },
   alternates: {
     canonical: "/resume/new",

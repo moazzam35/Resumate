@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -8,7 +8,6 @@ import {
   Menu,
   X,
   FileText,
-  Command,
   ChevronRight,
   LayoutDashboard,
   LogOut,
@@ -27,7 +26,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
-import { CommandPalette } from "@/components/shared/command-palette";
 import { useAuthStore } from "@/store";
 import { SITE_CONFIG } from "@/lib/constants";
 import { cn, getInitials } from "@/lib/utils";
@@ -36,15 +34,28 @@ const GUEST_LINKS = [
   { label: "Features", href: "/#features" },
   { label: "Templates", href: "/#templates" },
   { label: "Pricing", href: "/#pricing" },
-  { label: "Blog", href: "/blog" },
+  { label: "Blog", href: "/blog", matchPrefix: "/blog" },
+  // Secondary destinations — shown at desktop width only, so the tablet nav
+  // keeps a comfortable pace instead of crowding the auth actions.
+  { label: "FAQ", href: "/#faq", desktopOnly: true },
+  { label: "ATS Checker", href: "/dashboard/ats-checker", matchPrefix: "/dashboard/ats-checker", desktopOnly: true },
+];
+
+// Signed-in users get an app-first nav: their workspace + the key product
+// destinations. All links are always visible (like the dashboard sidebar) —
+// the nav container scrolls internally on the tightest widths instead of
+// hiding any link.
+const AUTH_LINKS = [
+  { label: "Templates", href: "/#templates" },
+  { label: "ATS Checker", href: "/dashboard/ats-checker", matchPrefix: "/dashboard/ats-checker" },
+  { label: "Blog", href: "/dashboard/blog", matchPrefix: "/dashboard/blog" },
+  { label: "Pricing", href: "/#pricing" },
   { label: "FAQ", href: "/#faq" },
-  { label: "ATS Checker", href: "/dashboard/ats-checker" },
 ];
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [cmdPaletteOpen, setCmdPaletteOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
   const { user, isAuthenticated, role, logout } = useAuthStore();
@@ -64,17 +75,93 @@ export default function Navbar() {
   const scrollToHash = (e, href) => {
     const hashIndex = href.indexOf("#");
     if (hashIndex === -1) return;
-    const path = href.slice(0, hashIndex);
+    const path = href.slice(0, hashIndex) || "/";
     const hash = href.slice(hashIndex + 1);
-    if (!(path === "" || path === "/" || pathname === path)) return;
+    if (pathname !== path) return;
     e.preventDefault();
     setMobileOpen(false);
+    setActiveHash(`#${hash}`);
     document.getElementById(hash)?.scrollIntoView({ behavior: "smooth" });
   };
 
   const handleLogout = async () => {
     await logout();
     router.push("/");
+  };
+
+  // Full nav for the current auth state. The first link is the user's primary
+  // destination (Dashboard, or Admin for admins); the rest are shared across
+  // states. `desktopOnly` links drop out at tablet width to keep the pace.
+  const navLinks = useMemo(() => {
+    if (isAuthenticated) {
+      if (isAdmin) {
+        return [
+          { label: "Admin", href: "/admin", matchPrefix: "/admin", icon: Shield },
+          ...AUTH_LINKS,
+        ];
+      }
+      return [{ label: "Dashboard", href: "/dashboard" }, ...AUTH_LINKS];
+    }
+    return GUEST_LINKS;
+  }, [isAuthenticated, isAdmin]);
+
+  const [activeHash, setActiveHash] = useState("");
+
+  // Scroll-spy: track which homepage section is in view via IntersectionObserver.
+  // Falls back to URL hash on direct navigation (/#templates, etc.).
+  useEffect(() => {
+    if (pathname !== "/") return;
+
+    // On direct navigation with a hash, set it immediately.
+    const initHash = window.location.hash;
+    if (initHash) setActiveHash(initHash);
+
+    const hashLinks = navLinks.filter((l) => l.href.includes("#"));
+    const sectionIds = hashLinks.map((l) => l.href.slice(l.href.indexOf("#") + 1));
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        // Pick the topmost visible section.
+        const visible = entries
+          .filter((e) => e.isIntersecting)
+          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+        if (visible.length > 0) {
+          const hash = `#${visible[0].target.id}`;
+          setActiveHash((prev) => (prev === hash ? prev : hash));
+          if (window.location.hash !== hash) {
+            history.replaceState(null, "", hash);
+          }
+        }
+      },
+      { rootMargin: "-20% 0px -70% 0px", threshold: 0 }
+    );
+
+    // Observe after a tick so DOM sections are mounted.
+    const timer = setTimeout(() => {
+      sectionIds.forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) observer.observe(el);
+      });
+    }, 100);
+
+    return () => {
+      clearTimeout(timer);
+      observer.disconnect();
+    };
+  }, [pathname, navLinks]);
+
+  // Reset hash state on route change (leaving home page).
+  useEffect(() => {
+    if (pathname !== "/") setActiveHash("");
+  }, [pathname]);
+
+  const isLinkActive = (link) => {
+    if (link.matchPrefix) return pathname.startsWith(link.matchPrefix);
+    if (link.href.includes("#")) {
+      if (pathname !== "/") return false;
+      return activeHash === link.href.slice(link.href.indexOf("#"));
+    }
+    return pathname === link.href;
   };
 
   return (
@@ -87,7 +174,7 @@ export default function Navbar() {
             : "border-b border-transparent py-4"
         )}
       >
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 md:px-5 lg:px-8">
           <div className="flex items-center justify-between">
             <Link href={isAdmin ? "/admin" : "/"} className="flex items-center gap-2.5 group">
               <div className="flex h-8 w-8 items-center justify-center rounded-[9px] bg-stamp text-paper shadow-[0_2px_8px_-2px_color-mix(in_srgb,var(--stamp)_60%,transparent)] transition-transform duration-200 group-hover:scale-[1.04]">
@@ -101,80 +188,28 @@ export default function Navbar() {
               </span>
             </Link>
 
-            <nav className="hidden md:flex items-center gap-0.5 rounded-[10px] border border-border bg-paper-alt/90 p-1 backdrop-blur-sm shadow-[0_1px_2px_oklch(0_0_0/0.03)]">
-              {!isAuthenticated && GUEST_LINKS.map((link) => {
-                const isActive = pathname === link.href;
-                return (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    onClick={(e) => scrollToHash(e, link.href)}
-                    className={cn(
-                      "relative px-3 py-1.5 text-xs font-medium rounded-[7px] transition-colors",
-                      isActive
-                        ? "text-ink bg-popover border border-border shadow-[0_1px_2px_oklch(0_0_0/0.04)]"
-                        : "text-muted hover:text-ink"
-                    )}
-                  >
-                    {link.label}
-                  </Link>
-                );
-              })}
-              {isAuthenticated && (
+            <nav className="hidden md:flex w-fit min-w-0 items-center justify-center gap-0.5 overflow-x-auto rounded-[10px] border border-border bg-paper-alt/90 p-1 backdrop-blur-sm shadow-[0_1px_2px_oklch(0_0_0/0.03)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              {navLinks.map((link) => (
                 <Link
-                  href="/blog"
+                  key={link.href}
+                  href={link.href}
+                  onClick={(e) => scrollToHash(e, link.href)}
                   className={cn(
-                    "relative px-3 py-1.5 text-xs font-medium rounded-[7px] transition-colors",
-                    pathname.startsWith("/blog")
-                      ? "text-ink bg-popover border border-border shadow-[0_1px_2px_oklch(0_0_0/0.04)]"
-                      : "text-muted hover:text-ink"
+                    "relative whitespace-nowrap px-1.5 py-1.5 text-[11px] font-medium rounded-[7px] transition-colors lg:px-3 lg:text-xs",
+                    link.icon && "flex items-center gap-1.5",
+                    link.desktopOnly && "hidden lg:inline-flex",
+                    isLinkActive(link)
+                      ? "bg-primary text-primary-foreground shadow-sm"
+                      : "text-muted hover:text-ink hover:bg-paper-alt/60"
                   )}
                 >
-                  Blog
+                  {link.icon && <link.icon className="h-3 w-3" />}
+                  {link.label}
                 </Link>
-              )}
-              {isAuthenticated && isAdmin && (
-                <Link
-                  href="/admin"
-                  className={cn(
-                    "relative px-3 py-1.5 text-xs font-medium rounded-[7px] transition-colors flex items-center gap-1.5",
-                    pathname.startsWith("/admin")
-                      ? "text-ink bg-popover border border-border shadow-[0_1px_2px_oklch(0_0_0/0.04)]"
-                      : "text-muted hover:text-ink"
-                  )}
-                >
-                  <Shield className="h-3 w-3" />
-                  Admin
-                </Link>
-              )}
-              {isAuthenticated && !isAdmin && (
-                <Link
-                  href="/dashboard"
-                  className={cn(
-                    "relative px-3 py-1.5 text-xs font-medium rounded-[7px] transition-colors",
-                    pathname.startsWith("/dashboard")
-                      ? "text-ink bg-popover border border-border shadow-[0_1px_2px_oklch(0_0_0/0.04)]"
-                      : "text-muted hover:text-ink"
-                  )}
-                >
-                  Dashboard
-                </Link>
-              )}
+              ))}
             </nav>
 
-            <div className="hidden md:flex items-center gap-2">
-              <button
-                onClick={() => setCmdPaletteOpen(true)}
-                className="inline-flex h-9 items-center justify-center gap-2 rounded-[10px] border border-border bg-paper-alt/90 px-3.5 text-sm text-muted hover:text-ink hover:bg-paper transition-colors cursor-pointer shadow-[0_1px_2px_oklch(0_0_0/0.03)]"
-                title="Search commands (Cmd+K)"
-              >
-                <Command className="h-4 w-4 shrink-0" />
-                <span className="text-[13px] font-medium leading-none">Search...</span>
-                <kbd className="inline-flex items-center rounded-[6px] border border-border bg-paper px-1.5 py-0.5 text-[9px] font-mono-data leading-none">
-                  ⌘K
-                </kbd>
-              </button>
-
+            <div className="hidden md:flex items-center gap-1.5 lg:gap-2">
               <ThemeToggle />
 
               {isAuthenticated ? (
@@ -188,7 +223,7 @@ export default function Navbar() {
                   )}
                   <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="relative h-9 w-9 rounded-full border border-border bg-paper-alt/90 shadow-[0_1px_2px_oklch(0_0_0/0.03)] hover:border-border-strong" aria-label="Open user menu">
+                    <Button variant="ghost" size="icon" className="relative h-9 w-9 rounded-full border border-border bg-paper-alt/90 shadow-[0_1px_2px_oklch(0_0_0/0.03)] hover:border-border-strong md:h-8 md:w-8 lg:h-9 lg:w-9" aria-label="Open user menu">
 <Avatar className="h-8 w-8">
                        {user?.avatar && <AvatarImage src={user.avatar} alt={user.name || "Avatar"} />}
                        <AvatarFallback className="bg-stamp text-paper text-[11px] font-bold">
@@ -280,16 +315,16 @@ export default function Navbar() {
               className="md:hidden border-b border-border bg-paper"
             >
               <div className="px-4 py-4 space-y-1">
-                {!isAuthenticated && GUEST_LINKS.map((link) => (
+                {navLinks.map((link) => (
                   <Link
                     key={link.href}
                     href={link.href}
                     onClick={(e) => scrollToHash(e, link.href)}
                     className={cn(
                       "block px-3 py-2 text-xs font-medium rounded-md transition-colors",
-                      pathname === link.href
-                        ? "bg-paper-alt text-ink border border-border"
-                        : "text-muted hover:text-ink"
+                      isLinkActive(link)
+                        ? "bg-primary text-primary-foreground"
+                        : "text-muted hover:text-ink hover:bg-paper-alt/60"
                     )}
                   >
                     {link.label}
@@ -298,26 +333,6 @@ export default function Navbar() {
                 <div className="pt-2 border-t border-border flex flex-col gap-2">
                   {isAuthenticated ? (
                     <>
-                      <Link
-                        href="/blog"
-                        className={cn(
-                          "block px-3 py-2 text-xs font-medium rounded-md transition-colors",
-                          pathname.startsWith("/blog")
-                            ? "bg-paper-alt text-ink border border-border"
-                            : "text-muted hover:text-ink"
-                        )}
-                      >
-                        Blog
-                      </Link>
-                      {isAdmin ? (
-                        <Link href="/admin">
-                          <Button className="w-full" leftIcon={Shield}>Admin Dashboard</Button>
-                        </Link>
-                      ) : (
-                        <Link href="/dashboard">
-                          <Button className="w-full" leftIcon={LayoutDashboard}>Dashboard</Button>
-                        </Link>
-                      )}
                       {!isAdmin && !isPremium && (
                         <Link href="/dashboard/upgrade">
                           <Button className="w-full" leftIcon={Sparkles}>Upgrade to Pro</Button>
@@ -343,8 +358,6 @@ export default function Navbar() {
           )}
         </AnimatePresence>
       </header>
-
-      <CommandPalette open={cmdPaletteOpen} setOpen={setCmdPaletteOpen} />
     </>
   );
 }

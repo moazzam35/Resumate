@@ -39,7 +39,6 @@ export async function generateMetadata({ params }) {
       images: ["/twitter-image"],
       title,
       description,
-      creator: "@airesumebuilder",
     },
     alternates: {
       canonical: `${BASE_URL}/blog/${post.slug}`,
@@ -47,6 +46,30 @@ export async function generateMetadata({ params }) {
     robots: {
       index: true,
       follow: true,
+    },
+    other: {
+      "ld+json": JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "Article",
+        headline: post.title,
+        description: post.excerpt,
+        image: post.image ? `${BASE_URL}${post.image}` : `${BASE_URL}/blog_hero.webp`,
+        datePublished: post.date ? new Date(post.date).toISOString() : undefined,
+        author: {
+          "@type": "Organization",
+          name: post.author,
+          url: BASE_URL,
+        },
+        publisher: {
+          "@type": "Organization",
+          name: SITE_CONFIG.name,
+          logo: {
+            "@type": "ImageObject",
+            url: `${BASE_URL}/icon-512.svg`,
+          },
+        },
+        mainEntityOfPage: `${BASE_URL}/blog/${post.slug}`,
+      }).replace(/</g, "\\u003c"),
     },
   };
 }
@@ -58,46 +81,7 @@ export default async function Page({ params }) {
 
   return (
     <>
-      <ArticleStructuredData params={params} />
       <PageContent params={params} />
     </>
-  );
-}
-
-async function ArticleStructuredData({ params }) {
-  const { slug } = await params;
-  const post = blogPosts.find((p) => p.slug === slug);
-  if (!post) return null;
-
-  const article = {
-    "@context": "https://schema.org",
-    "@type": "Article",
-    headline: post.title,
-    description: post.excerpt,
-    image: `${BASE_URL}/blog_hero.webp`,
-    datePublished: post.date ? new Date(post.date).toISOString() : undefined,
-    author: {
-      "@type": "Organization",
-      name: post.author,
-      url: BASE_URL,
-    },
-    publisher: {
-      "@type": "Organization",
-      name: SITE_CONFIG.name,
-      logo: {
-        "@type": "ImageObject",
-        url: `${BASE_URL}/icon-512.svg`,
-      },
-    },
-    mainEntityOfPage: `${BASE_URL}/blog/${post.slug}`,
-  };
-
-  return (
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{
-        __html: JSON.stringify(article).replace(/</g, "\\u003c"),
-      }}
-    />
   );
 }

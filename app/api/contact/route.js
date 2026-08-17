@@ -46,7 +46,7 @@ export async function POST(request) {
       );
     }
 
-    const to = process.env.CONTACT_TO || process.env.SUPPORT_EMAIL || process.env.EMAIL_FROM || "support@resumate.app";
+    const to = process.env.CONTACT_TO || process.env.SUPPORT_EMAIL || process.env.EMAIL_FROM || "moazzampasha356@gmail.com";
 
     await sendEmail({
       to,

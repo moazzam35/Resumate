@@ -24,7 +24,6 @@ export const metadata = {
     images: ["/twitter-image"],
     title: "Interview Preparation – Resumate",
     description: "Prepare for job interviews with AI-powered practice questions, mock interviews, and instant feedback.",
-    creator: "@airesumebuilder",
   },
   alternates: {
     canonical: "/dashboard/interview",

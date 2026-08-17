@@ -35,7 +35,6 @@ export const metadata = {
     title: "Blog – Career Tips & Resume Advice | Resumate",
     description:
       "Expert career advice, resume tips, and interview preparation guides from Resumate.",
-    creator: "@airesumebuilder",
   },
   alternates: {
     canonical: "/blog",

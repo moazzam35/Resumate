@@ -24,7 +24,6 @@ export const metadata = {
     images: ["/twitter-image"],
     title: "Sign In – Resumate",
     description: "Sign in to your Resumate account to access your resumes and ATS analytics.",
-    creator: "@airesumebuilder",
   },
   alternates: {
     canonical: "/login",

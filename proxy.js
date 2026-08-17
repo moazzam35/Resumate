@@ -23,6 +23,9 @@ const GUEST_ALLOWED_PAGES = [
   "/terms",
   "/security",
   "/templates",
+  "/help",
+  "/support",
+  "/pricing",
   "/sitemap.xml",
   "/robots.txt",
   "/opengraph-image",
@@ -44,6 +47,7 @@ const GUEST_ALLOWED_API = [
   "/api/upload",
   "/api/templates",
   "/api/contact",
+  "/api/support",
 ];
 
 function matchPathname(pathname, routes) {

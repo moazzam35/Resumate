@@ -41,10 +41,13 @@ export default function BlogPage() {
   }, [search, activeCategory]);
 
   const featuredPost = posts.find((p) => p.featured);
-  const regularPosts = filteredPosts.filter((p) => p.id !== featuredPost?.id || activeCategory !== "All");
+  const showFeaturedCard = activeCategory === "All" && !search && featuredPost;
+  const regularPosts = showFeaturedCard
+    ? filteredPosts.filter((p) => p.id !== featuredPost.id)
+    : filteredPosts;
 
   return (
-    <div className="min-h-screen bg-paper">
+    <div className="min-h-screen overflow-x-hidden bg-paper">
       <section className="relative overflow-hidden px-4 pb-12 pt-24 sm:px-6 lg:px-8">
         <div className="absolute inset-0 bg-gradient-to-br from-stamp/5 via-transparent to-stamp/5" />
         <div className="relative mx-auto max-w-7xl">
@@ -57,10 +60,10 @@ export default function BlogPage() {
             <Badge variant="default" className="mb-4 rounded-md">
               Blog
             </Badge>
-            <h1 className="heading-display gradient-text text-4xl font-semibold sm:text-5xl">
+            <h1 className="heading-display gradient-text text-3xl font-semibold text-balance sm:text-4xl lg:text-5xl">
               Career insights & resume tips
             </h1>
-            <p className="mx-auto mt-4 max-w-2xl text-lg text-muted">
+            <p className="mx-auto mt-4 max-w-2xl text-base text-muted text-balance sm:text-lg">
               Expert advice to help you build better resumes and land more
               interviews.
             </p>
@@ -70,7 +73,7 @@ export default function BlogPage() {
 
       <section className="px-4 pb-24 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
-          {activeCategory === "All" && !search && featuredPost && (
+          {showFeaturedCard && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -79,18 +82,18 @@ export default function BlogPage() {
             >
               <Link href={`/blog/${featuredPost.slug}`}>
                 <Card className="gradient-border group overflow-hidden rounded-md border border-border transition-all hover:border-stamp/20">
-                  <div className="grid gap-6 p-6 sm:p-8 md:grid-cols-2">
-                    <div className="flex flex-col justify-center">
+                  <div className="grid md:grid-cols-2">
+                    <div className="flex flex-col justify-center p-6 sm:p-8 md:order-1">
                       <Badge variant="default" className="mb-3 w-fit rounded-md">
                         Featured
                       </Badge>
-                      <h2 className="heading-display mb-3 text-2xl font-semibold transition-colors group-hover:text-stamp sm:text-3xl">
+                      <h2 className="heading-display mb-3 text-2xl font-semibold text-balance transition-colors group-hover:text-stamp sm:text-3xl">
                         {featuredPost.title}
                       </h2>
                       <p className="mb-4 text-muted">
                         {featuredPost.excerpt}
                       </p>
-                      <div className="flex items-center gap-4 text-sm text-muted">
+                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted">
                         <span>{featuredPost.author}</span>
                         <span className="flex items-center gap-1">
                           <Clock className="h-3 w-3" />
@@ -102,18 +105,20 @@ export default function BlogPage() {
                         Read more
                       </Button>
                     </div>
-                    <div className="relative hidden items-center justify-center overflow-hidden rounded-md bg-gradient-to-br from-stamp/10 to-stamp/5 p-8 md:flex">
+                    <div className="relative order-first aspect-[3/2] bg-gradient-to-br from-stamp/10 to-stamp/5 md:order-2 md:aspect-auto">
                       <Image
                         src="/blog_hero.webp"
                         alt={featuredPost.title}
-                        width={1536}
-                        height={1024}
+                        fill
+                        priority
                         sizes="(max-width: 768px) 100vw, 50vw"
-                        className="h-auto w-full object-cover rounded-md"
+                        className="object-cover"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-stamp/20 to-transparent" />
-                      <div className="relative text-center p-4">
-                        <Badge variant="outline" className="rounded-md">{featuredPost.category}</Badge>
+                      <div className="absolute inset-0 flex items-center justify-center p-4">
+                        <Badge variant="outline" className="rounded-md bg-paper/80 backdrop-blur-sm">
+                          {featuredPost.category}
+                        </Badge>
                       </div>
                     </div>
                   </div>
@@ -123,13 +128,13 @@ export default function BlogPage() {
           )}
 
           <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="relative flex-1 sm:max-w-sm">
+            <div className="relative w-full sm:max-w-sm">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
               <Input
                 placeholder="Search articles..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="rounded-md pl-9"
+                className="w-full rounded-md pl-9"
               />
             </div>
             <div className="flex flex-wrap gap-2">
@@ -137,7 +142,7 @@ export default function BlogPage() {
                 <Badge
                   key={cat}
                   variant={activeCategory === cat ? "default" : "outline"}
-                  className="cursor-pointer rounded-md transition-all hover:bg-stamp/10 hover:text-stamp"
+                  className="cursor-pointer rounded-md px-3 py-1.5 text-xs transition-all hover:bg-stamp/10 hover:text-stamp"
                   onClick={() => setActiveCategory(cat)}
                 >
                   {cat}
@@ -148,7 +153,7 @@ export default function BlogPage() {
 
           {regularPosts.length === 0 ? (
             <div className="py-16 text-center">
-              <p className="text-muted">
+              <p className="text-muted text-balance">
                 No articles found matching your search.
               </p>
             </div>
@@ -162,26 +167,36 @@ export default function BlogPage() {
               className="grid gap-6 md:grid-cols-2 lg:grid-cols-3"
             >
               {regularPosts.map((post, i) => (
-                <motion.div key={post.id} variants={fadeUp} custom={i}>
-                  <Link href={`/blog/${post.slug}`}>
-                    <Card className="group flex h-full flex-col rounded-md border border-border bg-paper-alt transition-all hover:border-stamp/20">
+                <motion.div key={post.id} variants={fadeUp} custom={i} className="h-full">
+                  <Link href={`/blog/${post.slug}`} className="block h-full">
+                    <Card className="group flex h-full flex-col overflow-hidden rounded-md border border-border bg-paper-alt transition-all hover:border-stamp/20">
+                      <div className="relative aspect-[3/2] w-full overflow-hidden border-b border-border/60">
+                        <img
+                          src={post.image}
+                          alt={post.title}
+                          width={768}
+                          height={512}
+                          loading="lazy"
+                          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+                        />
+                      </div>
                       <div className="flex items-center justify-between p-6 pb-0">
                         <Badge variant="default" className="rounded-md">{post.category}</Badge>
-                        <span className="flex items-center gap-1 text-xs text-muted">
+                        <span className="flex shrink-0 items-center gap-1 text-xs text-muted">
                           <Clock className="h-3 w-3" />
                           {post.readTime}
                         </span>
                       </div>
                       <CardContent className="flex flex-1 flex-col p-6">
-                        <h3 className="heading-display mb-2 text-lg font-semibold transition-colors group-hover:text-stamp">
+                        <h3 className="heading-display mb-2 line-clamp-2 text-lg font-semibold transition-colors group-hover:text-stamp">
                           {post.title}
                         </h3>
-                        <p className="mb-4 flex-1 text-sm text-muted">
+                        <p className="mb-4 flex-1 line-clamp-3 text-sm text-muted">
                           {post.excerpt}
                         </p>
-                        <div className="flex items-center justify-between text-sm text-muted">
-                          <span>{post.author}</span>
-                          <span>{post.date}</span>
+                        <div className="flex items-center justify-between gap-2 text-sm text-muted">
+                          <span className="truncate">{post.author}</span>
+                          <span className="shrink-0">{post.date}</span>
                         </div>
                       </CardContent>
                     </Card>

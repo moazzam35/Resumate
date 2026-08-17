@@ -24,7 +24,6 @@ export const metadata = {
     images: ["/twitter-image"],
     title: "User Management – Resumate",
     description: "Manage user accounts, roles, subscriptions, and account status for Resumate.",
-    creator: "@airesumebuilder",
   },
   alternates: {
     canonical: "/admin/users",

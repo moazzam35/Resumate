@@ -27,7 +27,6 @@ export const metadata = {
     title: "Contact Us – Resumate",
     description:
       "Get in touch with the Resumate team. Contact us for support, feedback, or partnership inquiries.",
-    creator: "@airesumebuilder",
   },
   alternates: {
     canonical: "/contact",

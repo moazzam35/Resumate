@@ -24,7 +24,6 @@ export const metadata = {
     images: ["/twitter-image"],
     title: "Resume Management – Resumate",
     description: "Review and manage user resumes across the Resumate platform.",
-    creator: "@airesumebuilder",
   },
   alternates: {
     canonical: "/admin/resumes",

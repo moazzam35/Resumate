@@ -24,7 +24,6 @@ export const metadata = {
     images: ["/twitter-image"],
     title: "Job Match – Resumate",
     description: "Compare your resume against job descriptions to find your best job matches and improve your applications.",
-    creator: "@airesumebuilder",
   },
   alternates: {
     canonical: "/dashboard/job-match",

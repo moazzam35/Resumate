@@ -24,7 +24,6 @@ export const metadata = {
     images: ["/twitter-image"],
     title: "Sign In – Resumate",
     description: "Sign in or create a Resumate account to start building ATS-optimized resumes.",
-    creator: "@airesumebuilder",
   },
   robots: {
     index: false,

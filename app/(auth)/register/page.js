@@ -24,7 +24,6 @@ export const metadata = {
     images: ["/twitter-image"],
     title: "Create Account – Resumate",
     description: "Create a free Resumate account to start building ATS-optimized resumes.",
-    creator: "@airesumebuilder",
   },
   alternates: {
     canonical: "/register",

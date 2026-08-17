@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowRight, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import HeroAnimation from "./hero-animation";
+import AnimatedHeadline, { PHRASES } from "./animated-headline";
 
 const containerVariants = {
   hidden: {},
@@ -65,9 +66,12 @@ export default function HeroSection() {
             className="max-w-lg space-y-3 md:space-y-8"
           >
             <motion.div variants={itemVariants} className="space-y-5">
-              <h1 className="text-3xl sm:text-4xl lg:text-[3.25rem] font-heading font-bold md:font-medium tracking-tight text-ink leading-[1.1] text-balance rounded-2xl border border-white/20 bg-white/10 px-4 py-3 backdrop-blur-md md:border-transparent md:bg-transparent md:px-0 md:py-0 md:backdrop-blur-none">
-                Build Resumes That{" "}
-                <span className="text-stamp">Get You Hired.</span>
+              <h1
+                aria-label={`Build a CV That ${PHRASES.join(" ")}`}
+                className="text-3xl sm:text-4xl md:text-[2.75rem] lg:text-[3.25rem] font-heading font-bold md:font-medium tracking-tight text-ink leading-[1.1] text-balance rounded-xl border border-white/20 bg-white/10 pl-2 pr-0.5 py-1 backdrop-blur-md w-fit max-w-[calc(100vw-2rem)] md:border-transparent md:bg-transparent md:px-0 md:py-0 md:backdrop-blur-none md:w-auto md:max-w-none"
+              >
+                Build a CV That{" "}
+                <AnimatedHeadline />
               </h1>
 
               <p className="hidden sm:block text-base sm:text-lg text-muted-foreground max-w-md leading-relaxed text-balance">

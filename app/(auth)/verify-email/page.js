@@ -25,7 +25,6 @@ export const metadata = {
     images: ["/twitter-image"],
     title: "Verify Email – Resumate",
     description: "Verify your Resumate account email address to activate your account.",
-    creator: "@airesumebuilder",
   },
   alternates: {
     canonical: "/verify-email",

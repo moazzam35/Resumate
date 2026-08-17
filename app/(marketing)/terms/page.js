@@ -29,7 +29,6 @@ export const metadata = {
     title: "Terms of Service – Resumate",
     description:
       "The terms and conditions governing your use of the Resumate resume-building platform.",
-    creator: "@airesumebuilder",
   },
   alternates: {
     canonical: "/terms",
@@ -105,7 +104,7 @@ const sections = [
   {
     title: "Contact",
     body: [
-      "For questions about these Terms of Service, contact us at support@resumate.app.",
+      "For questions about these Terms of Service, contact us at moazzampasha356@gmail.com.",
     ],
   },
 ];

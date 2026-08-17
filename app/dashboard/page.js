@@ -27,7 +27,6 @@ export const metadata = {
     title: "Dashboard – Resumate",
     description:
       "Manage your resumes, track ATS scores, and monitor your job application progress.",
-    creator: "@airesumebuilder",
   },
   alternates: {
     canonical: "/dashboard",

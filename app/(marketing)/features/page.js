@@ -35,7 +35,6 @@ export const metadata = {
     title: "Features – AI Resume Builder & ATS Checker | Resumate",
     description:
       "Discover Resumate's powerful AI-driven features: ATS optimization, cover letter generation, interview prep, resume templates, and job matching.",
-    creator: "@airesumebuilder",
   },
   alternates: {
     canonical: "/features",

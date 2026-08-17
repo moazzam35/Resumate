@@ -24,7 +24,6 @@ export const metadata = {
     images: ["/twitter-image"],
     title: "Admin Analytics – Resumate",
     description: "View platform-wide analytics, user growth, and engagement trends for Resumate.",
-    creator: "@airesumebuilder",
   },
   alternates: {
     canonical: "/admin/analytics",

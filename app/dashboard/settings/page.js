@@ -24,7 +24,6 @@ export const metadata = {
     images: ["/twitter-image"],
     title: "Settings – Resumate",
     description: "Manage your Resumate account settings, security options, and preferences.",
-    creator: "@airesumebuilder",
   },
   alternates: {
     canonical: "/dashboard/settings",

@@ -364,7 +364,7 @@ export default function ProfilePage() {
               <Input
                 label="Work Email"
                 type="email"
-                placeholder="moazzam@example.com"
+                placeholder="moazzampasha@gmail.com"
                 leftIcon={Mail}
                 {...register("email")}
                 error={errors.email?.message}
@@ -389,21 +389,21 @@ export default function ProfilePage() {
             <div className="grid gap-4 sm:grid-cols-3">
               <Input
                 label="GitHub URL"
-                placeholder="https://github.com/moazzam"
+                placeholder="https://github.com/moazzam35"
                 leftIcon={ExternalLink}
                 {...register("github")}
                 error={errors.github?.message}
               />
               <Input
                 label="LinkedIn URL"
-                placeholder="https://linkedin.com/in/moazzam"
+                placeholder="https://www.linkedin.com/in/moazzam-pasha-9619783a9/"
                 leftIcon={ExternalLink}
                 {...register("linkedin")}
                 error={errors.linkedin?.message}
               />
               <Input
                 label="Portfolio Website"
-                placeholder="https://moazzam.dev"
+                placeholder="https://moazzam35.github.io/portfolio/"
                 leftIcon={Globe}
                 {...register("portfolio")}
                 error={errors.portfolio?.message}

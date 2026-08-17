@@ -168,7 +168,7 @@ export function PersonalInfoStep({ resume, resumeId, onGenerateTool }) {
               <Input
                 id="email"
                 type="email"
-                placeholder="moazzam@example.com"
+                placeholder="moazzampasha@gmail.com"
                 error={errors.email?.message}
                 {...register("email")}
               />
@@ -234,7 +234,7 @@ export function PersonalInfoStep({ resume, resumeId, onGenerateTool }) {
               <Label htmlFor="linkedin">LinkedIn</Label>
               <Input
                 id="linkedin"
-                placeholder="https://linkedin.com/in/moazzam"
+                placeholder="https://www.linkedin.com/in/moazzam-pasha-9619783a9/"
                 error={errors.linkedin?.message}
                 {...register("linkedin")}
               />
@@ -243,7 +243,7 @@ export function PersonalInfoStep({ resume, resumeId, onGenerateTool }) {
               <Label htmlFor="github">GitHub</Label>
               <Input
                 id="github"
-                placeholder="https://github.com/moazzam"
+                placeholder="https://github.com/moazzam35"
                 error={errors.github?.message}
                 {...register("github")}
               />
@@ -252,7 +252,7 @@ export function PersonalInfoStep({ resume, resumeId, onGenerateTool }) {
               <Label htmlFor="portfolio">Portfolio</Label>
               <Input
                 id="portfolio"
-                placeholder="https://moazzam.com"
+                placeholder="https://moazzam35.github.io/portfolio/"
                 error={errors.portfolio?.message}
                 {...register("portfolio")}
               />

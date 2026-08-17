@@ -24,7 +24,6 @@ export const metadata = {
     images: ["/twitter-image"],
     title: "Reports – Resumate",
     description: "Generate and review platform reports on usage, performance, and user activity.",
-    creator: "@airesumebuilder",
   },
   alternates: {
     canonical: "/admin/reports",

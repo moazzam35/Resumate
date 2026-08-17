@@ -24,7 +24,6 @@ export const metadata = {
     images: ["/twitter-image"],
     title: "Resume Analytics – Resumate",
     description: "Track resume views, downloads, and performance insights across your Resumate account.",
-    creator: "@airesumebuilder",
   },
   alternates: {
     canonical: "/dashboard/analytics",

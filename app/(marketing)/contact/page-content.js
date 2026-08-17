@@ -10,9 +10,9 @@ import {
   MapPin,
   CheckCircle2,
   Send,
-  Globe,
   Briefcase,
   Code,
+  Code2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,21 +32,20 @@ const contactInfo = [
   {
     icon: Mail,
     label: "Email",
-    value: "support@resumate.app",
-    href: "mailto:support@resumate.app",
+    value: "moazzampasha356@gmail.com",
+    href: "mailto:moazzampasha356@gmail.com",
   },
   {
     icon: MapPin,
-    label: "Office",
-    value: "San Francisco, CA",
+    label: "Location",
+    value: "Bahawalnagar",
     href: null,
   },
 ];
 
 const socialLinks = [
-  { icon: Globe, label: "Twitter", href: "https://twitter.com/airesumebuilder" },
-  { icon: Briefcase, label: "LinkedIn", href: "https://linkedin.com" },
-  { icon: Code, label: "GitHub", href: "https://github.com/airesumebuilder" },
+  { icon: Briefcase, label: "LinkedIn", href: "https://www.linkedin.com/in/moazzam-pasha-9619783a9/" },
+  { icon: Code, label: "GitHub", href: "https://github.com/moazzam35" },
 ];
 
 export default function ContactPage() {
@@ -104,18 +103,36 @@ export default function ContactPage() {
             <p className="mx-auto mt-4 max-w-2xl text-lg text-muted text-balance">
               Have a question, feedback, or need help? We&apos;d love to hear from you.
             </p>
+
+            <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+              <a
+                href="https://moazzam35.github.io/portfolio/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full sm:w-auto"
+              >
+                <Button
+                  size="xl"
+                  variant="gradient"
+                  rightIcon={Code2}
+                  className="w-full sm:w-auto shadow-[0_10px_30px_-10px_color-mix(in_srgb,var(--stamp)_60%,transparent)]"
+                >
+                  Contact Developer
+                </Button>
+              </a>
+            </div>
           </motion.div>
         </div>
       </section>
 
       <section className="px-4 pb-24 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-6xl">
-          <div className="grid gap-10 lg:grid-cols-5">
+          <div className="grid gap-10 md:grid-cols-5">
             <motion.div
               initial={{ opacity: 0, x: -12 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.4, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
-              className="lg:col-span-2"
+              className="md:col-span-2"
             >
               <h2 className="heading-display mb-6 text-lg font-semibold">Contact Information</h2>
               <div className="space-y-5">
@@ -172,7 +189,7 @@ export default function ContactPage() {
               initial={{ opacity: 0, x: 12 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.4, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-              className="lg:col-span-3"
+              className="md:col-span-3"
             >
               <Card>
                 <CardContent className="p-6 sm:p-8">
@@ -203,7 +220,7 @@ export default function ContactPage() {
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="email">Email</Label>
-                          <Input id="email" type="email" placeholder="moazzam@example.com" {...register("email")} />
+                          <Input id="email" type="email" placeholder="moazzampasha@gmail.com" {...register("email")} />
                           {errors.email && <p className="text-xs text-flag">{errors.email.message}</p>}
                         </div>
                       </div>

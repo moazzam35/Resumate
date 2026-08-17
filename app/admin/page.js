@@ -25,7 +25,6 @@ export const metadata = {
     images: ["/twitter-image"],
     title: "Admin Dashboard – Resumate",
     description: "Administrative dashboard for managing users, resumes, and platform analytics.",
-    creator: "@airesumebuilder",
   },
   alternates: {
     canonical: "/admin",

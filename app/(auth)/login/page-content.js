@@ -95,7 +95,7 @@ export default function LoginPage() {
             <Input
               label="Work Email"
               type="email"
-              placeholder="moazzam@example.com"
+              placeholder="moazzampasha@gmail.com"
               leftIcon={Mail}
               value={email}
               onChange={(e) => setEmail(e.target.value)}

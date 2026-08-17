@@ -174,7 +174,7 @@ export function VerifyEmailContent() {
                   <Input
                     id="verify-email"
                     type="email"
-                    placeholder="moazzam@example.com"
+                    placeholder="moazzampasha@gmail.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                   />
