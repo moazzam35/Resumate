@@ -106,6 +106,67 @@ export function useIntersectionObserver(options = {}) {
   return [ref, isIntersecting];
 }
 
+export function useJobIntelligence() {
+  const [isLooking, setIsLooking] = useState(false);
+  const [jobResult, setJobResult] = useState(null);
+  const [error, setError] = useState(null);
+  const abortRef = useRef(null);
+
+  const lookup = async (title) => {
+    if (!title || typeof title !== "string" || !title.trim()) {
+      setJobResult(null);
+      setError(null);
+      return null;
+    }
+
+    if (abortRef.current) abortRef.current.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    setIsLooking(true);
+    setError(null);
+
+    try {
+      const res = await fetch("/api/job-intelligence", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: title.trim() }),
+        signal: controller.signal,
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || "Failed to get job intelligence");
+      }
+
+      if (data.success && data.result) {
+        setJobResult(data.result);
+        setIsLooking(false);
+        return data.result;
+      }
+
+      setJobResult(null);
+      setIsLooking(false);
+      return null;
+    } catch (err) {
+      if (err.name === "AbortError") return null;
+      console.error("Job intelligence error:", err);
+      setError(err.message || "Failed to look up job");
+      setIsLooking(false);
+      return null;
+    }
+  };
+
+  const reset = () => {
+    setJobResult(null);
+    setError(null);
+    setIsLooking(false);
+  };
+
+  return { lookup, jobResult, isLooking, error, reset };
+}
+
 export function useLocalStorage(key, initialValue) {
   const [storedValue, setStoredValue] = useState(initialValue);
 

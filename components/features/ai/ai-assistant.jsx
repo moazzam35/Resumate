@@ -37,6 +37,7 @@ import { UpgradePromptModal } from "@/components/features/billing/upgrade-prompt
 import { post } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/shared/loading-skeleton";
+import { lookupJobLocally } from "@/lib/job-data";
 
 const AI_TOOLS = [
   { id: "SUMMARY", label: "Generate Summary", icon: Sparkles, description: "Create a professional summary" },
@@ -269,11 +270,20 @@ export function AIAssistant({ resumeId, resume, onApplyResult, request, onReques
     setResult(null);
 
     try {
+      const jobData = lookupJobLocally(resume?.title || "");
       const data = {
         ...inputData,
         title: resume?.title,
         skills: resume?.skills?.map((s) => s.name).join(", "),
         experience: resume?.experiences?.map((e) => `${e.position} at ${e.company}: ${e.description}`).join("\n"),
+        ...(jobData
+          ? {
+              suggestedSkills: jobData.skills?.join(", "),
+              suggestedResponsibilities: jobData.responsibilities?.join("; "),
+              suggestedKeywords: jobData.keywords?.join(", "),
+              jobCategory: jobData.category,
+            }
+          : {}),
       };
 
       const response = await post("/ai", {

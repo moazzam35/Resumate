@@ -1,13 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Sparkles } from "lucide-react";
+import { Sparkles, Loader2, Lightbulb } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -18,10 +18,13 @@ import {
 import { useResumeStore, useUIStore } from "@/store";
 import { personalInfoSchema } from "@/validators";
 import { put } from "@/lib/api";
+import { useJobIntelligence } from "@/hooks";
 
 export function PersonalInfoStep({ resume, resumeId, onGenerateTool }) {
   const { setCurrentResume, setLastSaved } = useResumeStore();
   const showToast = useUIStore((s) => s.showToast);
+  const { lookup, isLooking } = useJobIntelligence();
+  const [hasSuggested, setHasSuggested] = useState(false);
 
   const pi = resume?.personalInfo || {};
 
@@ -48,6 +51,7 @@ export function PersonalInfoStep({ resume, resumeId, onGenerateTool }) {
   });
 
   const summaryLength = watch("summary")?.length || 0;
+  const jobTitle = watch("title") || "";
 
   const values = watch();
   const snapshot = JSON.stringify(values);
@@ -114,6 +118,30 @@ export function PersonalInfoStep({ resume, resumeId, onGenerateTool }) {
       setValue("summary", nextSummary, { shouldValidate: true, shouldDirty: true });
     }
   }, [resume?.summary, resume?.personalInfo?.summary, getValues, setValue]);
+
+  const handleSuggestFromJobTitle = async () => {
+    const title = getValues("title");
+    if (!title || !title.trim()) {
+      showToast({ message: "Enter a job title first", type: "error" });
+      return;
+    }
+
+    const result = await lookup(title);
+    if (result && result.summary) {
+      setValue("summary", result.summary, { shouldValidate: true, shouldDirty: true });
+      setHasSuggested(true);
+      showToast({
+        message: result.source === "local"
+          ? "Summary suggested from job database"
+          : result.source === "cache"
+          ? "Summary loaded from cached data"
+          : result.source === "ai"
+          ? "Summary generated from AI"
+          : "Summary suggested from role analysis",
+        type: "success",
+      });
+    }
+  };
 
   const onSubmit = async (data) => {
     try {
@@ -206,10 +234,23 @@ export function PersonalInfoStep({ resume, resumeId, onGenerateTool }) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="summary">Professional Summary *</Label>
+            <div className="flex items-center justify-between gap-2">
+              <Label htmlFor="summary">Professional Summary *</Label>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                leftIcon={isLooking ? Loader2 : Lightbulb}
+                className="shrink-0"
+                disabled={isLooking || !jobTitle.trim()}
+                onClick={handleSuggestFromJobTitle}
+              >
+                {isLooking ? "Looking up..." : hasSuggested ? "Refresh Suggestion" : "Suggest from Job Title"}
+              </Button>
+            </div>
             <Textarea
               id="summary"
-              placeholder="Write a brief professional summary..."
+              placeholder="Write a brief professional summary or click 'Suggest from Job Title' for AI-assisted content..."
               rows={4}
               error={errors.summary?.message}
               helperText={
