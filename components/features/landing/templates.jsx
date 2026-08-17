@@ -109,7 +109,7 @@ export default function TemplatesSection() {
   );
 
   return (
-    <section id="templates" className="py-24 sm:py-32">
+    <section id="template" className="py-24 sm:py-32">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div ref={ref} className="text-center max-w-3xl mx-auto mb-16">
           <motion.div
@@ -159,7 +159,7 @@ export default function TemplatesSection() {
           transition={{ duration: 0.5, delay: 0.5 }}
           className="text-center mt-10"
         >
-          <Link href="/dashboard/templates">
+          <Link href="/#template">
             <Button variant="outline" size="lg" rightIcon={ArrowRight}>
               View All Templates
             </Button>

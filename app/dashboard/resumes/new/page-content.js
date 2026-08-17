@@ -18,7 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { TEMPLATES } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { isPremiumUser } from "@/lib/templates/access";
-import { useAuthStore } from "@/store";
+import { useAuthStore, useUIStore } from "@/store";
 import { useSubscription } from "@/hooks";
 import { UpgradePromptModal } from "@/components/features/billing/upgrade-prompt-modal";
 
@@ -39,6 +39,7 @@ export default function NewResumePage() {
   const [isCreating, setIsCreating] = useState(false);
 
   const premium = isPremiumUser(useAuthStore((s) => s.user));
+  const showToast = useUIStore((s) => s.showToast);
   const { atResumeLimit, isEnterprise } = useSubscription();
   const resumeAtLimit = atResumeLimit && !isEnterprise;
   const [showUpgrade, setShowUpgrade] = useState(false);
@@ -56,6 +57,13 @@ export default function NewResumePage() {
     } catch (err) {
       console.error("Failed to create resume", err);
       setIsCreating(false);
+      // Client usage can lag the server cap — when the server rejects with the
+      // limit message, show the friendly upgrade prompt instead of a raw error.
+      if ((err.message || "").includes("resume limit")) {
+        setShowUpgrade(true);
+        return;
+      }
+      showToast({ message: err.message || "Failed to create resume", type: "error" });
     }
   };
 

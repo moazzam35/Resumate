@@ -32,7 +32,7 @@ import { cn, getInitials } from "@/lib/utils";
 
 const GUEST_LINKS = [
   { label: "Features", href: "/#features" },
-  { label: "Templates", href: "/#templates" },
+  { label: "Templates", href: "/#template" },
   { label: "Pricing", href: "/#pricing" },
   { label: "Blog", href: "/blog", matchPrefix: "/blog" },
   // Secondary destinations — shown at desktop width only, so the tablet nav
@@ -46,7 +46,7 @@ const GUEST_LINKS = [
 // the nav container scrolls internally on the tightest widths instead of
 // hiding any link.
 const AUTH_LINKS = [
-  { label: "Templates", href: "/#templates" },
+  { label: "Templates", href: "/#template" },
   { label: "ATS Checker", href: "/dashboard/ats-checker", matchPrefix: "/dashboard/ats-checker" },
   { label: "Blog", href: "/dashboard/blog", matchPrefix: "/dashboard/blog" },
   { label: "Pricing", href: "/#pricing" },
@@ -108,7 +108,7 @@ export default function Navbar() {
   const [activeHash, setActiveHash] = useState("");
 
   // Scroll-spy: track which homepage section is in view via IntersectionObserver.
-  // Falls back to URL hash on direct navigation (/#templates, etc.).
+  // Falls back to URL hash on direct navigation (/#template, etc.).
   useEffect(() => {
     if (pathname !== "/") return;
 
