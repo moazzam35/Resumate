@@ -25,36 +25,13 @@ const itemVariants = {
 
 export default function HeroSection() {
   return (
-    <section className="relative min-h-screen overflow-hidden bg-paper">
+    <section className="relative min-h-screen bg-paper">
       <div className="absolute inset-x-0 bottom-0 top-20 pointer-events-none">
-        <div className="hidden md:block w-full h-full">
-          <HeroAnimation
-            chrome={false}
-            className="w-full h-full"
-            folder="/frames"
-            prefix="frame_"
-            padding={3}
-            ext="webp"
-            maxFrames={98}
-            frameDuration={60}
-            fit="cover"
-            isMobile={false}
-          />
-        </div>
-        <div className="block md:hidden w-full h-full">
-          <HeroAnimation
-            chrome={false}
-            className="w-full h-full"
-            folder="/mobile-frames"
-            prefix="frame_"
-            padding={3}
-            ext="png"
-            maxFrames={141}
-            frameDuration={1000 / 16}
-            fit="cover"
-            isMobile={true}
-          />
-        </div>
+        <HeroAnimation
+          chrome={false}
+          className="w-full h-full"
+          fit="cover"
+        />
       </div>
 
       <div className="relative z-10 min-h-screen flex items-end pb-12 sm:pb-12 lg:pb-16 px-6 sm:px-10 lg:px-16">

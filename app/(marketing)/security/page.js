@@ -94,7 +94,7 @@ export default function SecurityPage() {
   return (
     <div className="min-h-screen bg-paper">
       <section className="relative overflow-hidden px-4 pb-12 pt-28 sm:px-6 lg:px-8">
-        <div className="absolute inset-0 dot-pattern opacity-30" />
+        <div className="pointer-events-none absolute inset-0 dot-pattern opacity-30" />
         <div className="relative mx-auto max-w-7xl text-center">
           <div className="inline-flex items-center gap-2 rounded-sm border border-stamp/10 bg-stamp/5 px-4 py-1.5 text-sm font-medium text-stamp mb-6">
             Security

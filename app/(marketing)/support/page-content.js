@@ -110,7 +110,7 @@ export default function SupportPage() {
     <div className="min-h-screen bg-paper">
       {/* ============ HERO ============ */}
       <section className="relative overflow-hidden px-4 pb-14 pt-28 sm:px-6 lg:px-8">
-        <div className="absolute inset-0 dot-pattern opacity-30" />
+        <div className="pointer-events-none absolute inset-0 dot-pattern opacity-30" />
         <div className="relative mx-auto max-w-7xl text-center">
           <motion.div
             initial={{ opacity: 0, y: 12 }}

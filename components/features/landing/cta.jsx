@@ -19,9 +19,9 @@ export default function CTASection() {
           transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
           className="relative rounded-3xl overflow-hidden"
         >
-          <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary to-[oklch(0.5_0.2_303)]" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(255,255,255,0.08),transparent)]" />
-          <div className="absolute inset-0 dot-pattern opacity-10" />
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-primary via-primary to-[oklch(0.5_0.2_303)]" />
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(255,255,255,0.08),transparent)]" />
+          <div className="pointer-events-none absolute inset-0 dot-pattern opacity-10" />
 
           <div className="relative px-8 py-16 sm:px-12 sm:py-20 lg:px-20 text-center">
             <motion.div

@@ -297,6 +297,17 @@ html {
   }
 }
 
+/* ===== TOUCH — eliminate 300 ms tap delay and double-tap zoom on
+   interactive elements so every button, link, and nav item responds
+   instantly to a single finger tap on mobile. */
+a,
+button,
+[role="button"],
+summary,
+label {
+  touch-action: manipulation;
+}
+
 /* ===== SAFE AREA — breathe on notched phones ===== */
 @supports (padding: env(safe-area-inset-bottom)) {
   .safe-bottom {

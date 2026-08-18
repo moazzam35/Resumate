@@ -16,7 +16,7 @@ export default function LiveDemoSection() {
   const [ref, isVisible] = useIntersectionObserver();
 
   return (
-    <section id="live-demo" className="py-24 sm:py-32 relative overflow-hidden">
+    <section id="live-demo" className="py-24 sm:py-32 relative">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
           <div ref={ref}>

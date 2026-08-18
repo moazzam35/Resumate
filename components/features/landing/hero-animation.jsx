@@ -20,11 +20,8 @@ const BADGES = [
      switching desktop <-> mobile (or navigating back to the page) never
      re-downloads frames the browser has already delivered this session.
    - Frames are decoded with `createImageBitmap` where available, which keeps
-     PNG/WebP decode off the main thread. Decoding 141 × 720×1280 PNGs is
-     what dominates the hero's main-thread blocking time on mobile (the
-     Lighthouse mobile run measured ~127s of total blocking time, almost all
-     of it frame decode). Browsers without `createImageBitmap` fall back to
-     an <img> element with async decoding.
+     WebP/PNG decode off the main thread. Browsers without
+     `createImageBitmap` fall back to <img> with explicit decode().
    - Failed frames are cached as `null` so a 404 is not retried endlessly.
    - The returned promise resolves with the bitmap/Image (usable directly by
      the canvas renderer) or `null` on failure — never rejects.
@@ -39,7 +36,14 @@ function loadFrame(url) {
     new Promise((resolve) => {
       const img = new Image();
       img.decoding = "async";
-      img.onload = () => resolve(img);
+      img.onload = () => {
+        // Explicit decode() reduces main-thread jank during animation.
+        if (typeof img.decode === "function") {
+          img.decode().then(() => resolve(img)).catch(() => resolve(img));
+        } else {
+          resolve(img);
+        }
+      };
       img.onerror = () => {
         console.error(`[HeroAnimation] failed to load frame: ${url}`);
         resolve(null);
@@ -67,15 +71,15 @@ function loadFrame(url) {
 
 /* Progressive-loading tuning.
    Desktop frames are ~32KB each: 8 critical frames is roughly 250KB and
-   gives a clearly smooth opening beat. Mobile frames are ~720KB each, so we
-   start with 4 critical frames (~2.9MB) and stream the rest in the
-   background — the renderer holds on the last loaded frame (with the existing
-   drift animation) until more frames arrive, like progressive video buffering. */
-const CONCURRENCY = 4;
-const CRITICAL_FRAMES_DESKTOP = 8;
-const CRITICAL_FRAMES_MOBILE = 4;
-const START_TIMEOUT_MS = 6000;
-const HARD_TIMEOUT_MS = 12000;
+   gives a clearly smooth opening beat. Mobile frames are now WebP ~36KB
+   each (previously ~700KB PNGs), so 8 critical frames is ~290KB — we use
+   the same count for both devices now. The renderer holds on the last
+   loaded frame (with the existing drift animation) until more frames
+   arrive, like progressive video buffering. */
+const CONCURRENCY = 6;
+const CRITICAL_FRAMES = 8;
+const START_TIMEOUT_MS = 4000;
+const HARD_TIMEOUT_MS = 10000;
 
 /* Render at most this many device pixels per CSS pixel. The source frames
    cap the real sharpness (mobile frames are 720px wide), so rendering a 3×
@@ -84,132 +88,183 @@ const HARD_TIMEOUT_MS = 12000;
    with no visible quality loss. */
 const MAX_DEVICE_PIXEL_RATIO = 2;
 
+/* =====================================================================
+   Responsive breakpoint detection.
+   Uses a single matchMedia query instead of mounting TWO HeroAnimation
+   instances (the old pattern downloaded BOTH frame sets simultaneously).
+   ===================================================================== */
+const MOBILE_BREAKPOINT = "(max-width: 767px)";
+
+function getFrameConfig(isMobile) {
+  if (isMobile) {
+    return {
+      folder: "/mobile-frames",
+      prefix: "frame_",
+      padding: 3,
+      ext: "webp",
+      maxFrames: 141,
+      frameDuration: 1000 / 16,
+      source: "mobile",
+    };
+  }
+  return {
+    folder: "/frames",
+    prefix: "frame_",
+    padding: 3,
+    ext: "webp",
+    maxFrames: 98,
+    frameDuration: 60,
+    source: "desktop",
+  };
+}
+
 export default function HeroAnimation({
-  folder = "/frames",
-  prefix = "frame_",
-  padding = 3,
-  ext = "webp",
-  maxFrames = 98,
-  frameDuration = 60,
   className = "",
   chrome = true,
   fit = "cover",
-  isMobile = false,
 }) {
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
   const framesRef = useRef([]);
   const doneRef = useRef(false);
   const dprRef = useRef(1);
+  const loadingRef = useRef(false);
+  const abortRef = useRef(false);
 
   const [ready, setReady] = useState(false);
   const [loaded, setLoaded] = useState(0);
-  const [total, setTotal] = useState(0);
-  const expected = maxFrames;
-  const source = isMobile ? "mobile" : "desktop";
+  const [isMobile, setIsMobile] = useState(false);
+  const configRef = useRef(getFrameConfig(false));
+
+  /* =====================================================================
+     Responsive detection — single matchMedia listener.
+     When the breakpoint changes, abort current frame loading, clear
+     frames, and reload with the correct set.
+     ===================================================================== */
+  useEffect(() => {
+    const mq = window.matchMedia(MOBILE_BREAKPOINT);
+
+    const handleChange = (e) => {
+      const mobile = e.matches;
+      setIsMobile(mobile);
+      configRef.current = getFrameConfig(mobile);
+
+      // Abort any in-progress loading
+      abortRef.current = true;
+      framesRef.current = [];
+      doneRef.current = false;
+      setReady(false);
+      setLoaded(0);
+      loadingRef.current = false;
+
+      // Small delay to let the abort settle, then reload
+      requestAnimationFrame(() => {
+        abortRef.current = false;
+        startLoading();
+      });
+    };
+
+    // Set initial state
+    setIsMobile(mq.matches);
+    configRef.current = getFrameConfig(mq.matches);
+
+    if (mq.addEventListener) {
+      mq.addEventListener("change", handleChange);
+    } else {
+      mq.addListener(handleChange);
+    }
+
+    return () => {
+      if (mq.removeEventListener) {
+        mq.removeEventListener("change", handleChange);
+      } else {
+        mq.removeListener(handleChange);
+      }
+    };
+  }, []);
 
   /* =====================================================================
      PHASE 1 — load critical frames first, then stream the rest.
      ===================================================================== */
-  useEffect(() => {
+  const startLoading = useCallback(() => {
+    if (loadingRef.current) return;
+    loadingRef.current = true;
+
     const container = containerRef.current;
     if (!container) return;
 
-    let cancelled = false;
-    let stopLoading = null;
+    const cfg = configRef.current;
+    const { folder, prefix, padding, ext, maxFrames } = cfg;
 
-    const checkAndStart = () => {
-      const isVisible = container.offsetWidth > 0 || container.offsetHeight > 0;
-      if (!isVisible) return;
-      if (stopLoading) return;
+    framesRef.current = [];
+    doneRef.current = false;
+    setLoaded(0);
+    setReady(false);
 
-      framesRef.current = [];
-      doneRef.current = false;
-      setLoaded(0);
-      setTotal(0);
-      setReady(false);
+    const urls = Array.from(
+      { length: maxFrames },
+      (_, i) => `${folder}/${prefix}${pad(i + 1, padding)}.${ext}`
+    );
+    const results = new Array(maxFrames);
+    let head = 0;
+    let cursor = 0;
+    let pending = 0;
 
-      const critical = isMobile ? CRITICAL_FRAMES_MOBILE : CRITICAL_FRAMES_DESKTOP;
-
-      const loadAll = () => {
-        const urls = Array.from(
-          { length: maxFrames },
-          (_, i) => `${folder}/${prefix}${pad(i + 1, padding)}.${ext}`
-        );
-        const results = new Array(maxFrames);
-        let head = 0;
-        let cursor = 0;
-        let pending = 0;
-
-        const maybeStart = () => {
-          if (cancelled) return;
-          const have = framesRef.current.length;
-          if (have >= critical || (doneRef.current && have > 0)) setReady(true);
-        };
-
-        const append = () => {
-          while (head < maxFrames && results[head] !== undefined) {
-            const img = results[head];
-            if (img) {
-              framesRef.current.push(img);
-              setLoaded(framesRef.current.length);
-              maybeStart();
-            }
-            head++;
-          }
-        };
-
-        const pump = () => {
-          while (!cancelled && pending < CONCURRENCY && cursor < maxFrames) {
-            const i = cursor++;
-            pending++;
-            loadFrame(urls[i]).then((img) => {
-              if (cancelled) return;
-              results[i] = img;
-              pending--;
-              append();
-              pump();
-              if (head >= maxFrames) {
-                doneRef.current = true;
-                setTotal(framesRef.current.length);
-                maybeStart();
-              }
-            });
-          }
-        };
-
-        pump();
-      };
-
-      loadAll();
-
-      const startTimer = setTimeout(() => {
-        if (cancelled) return;
-        if (framesRef.current.length >= 1 && !doneRef.current) setReady(true);
-      }, START_TIMEOUT_MS);
-
-      const hardTimer = setTimeout(() => {
-        if (cancelled) return;
+    const maybeStart = () => {
+      if (abortRef.current) return;
+      const have = framesRef.current.length;
+      if (have >= CRITICAL_FRAMES || (doneRef.current && have > 0)) {
         setReady(true);
-      }, HARD_TIMEOUT_MS);
-
-      stopLoading = () => {
-        clearTimeout(startTimer);
-        clearTimeout(hardTimer);
-      };
+      }
     };
 
-    checkAndStart();
-    window.addEventListener("resize", checkAndStart);
+    const append = () => {
+      while (head < maxFrames && results[head] !== undefined) {
+        const img = results[head];
+        if (img) {
+          framesRef.current.push(img);
+          setLoaded(framesRef.current.length);
+          maybeStart();
+        }
+        head++;
+      }
+    };
+
+    const pump = () => {
+      while (!abortRef.current && pending < CONCURRENCY && cursor < maxFrames) {
+        const i = cursor++;
+        pending++;
+        loadFrame(urls[i]).then((img) => {
+          if (abortRef.current) return;
+          results[i] = img;
+          pending--;
+          append();
+          pump();
+          if (head >= maxFrames) {
+            doneRef.current = true;
+            setReady(true);
+            loadingRef.current = false;
+          }
+        });
+      }
+    };
+
+    pump();
+  }, []);
+
+  /* Kick off initial load when container is available */
+  useEffect(() => {
+    if (containerRef.current && !loadingRef.current) {
+      startLoading();
+    }
 
     return () => {
-      cancelled = true;
-      if (stopLoading) stopLoading();
+      abortRef.current = true;
       framesRef.current = [];
       doneRef.current = false;
-      window.removeEventListener("resize", checkAndStart);
+      loadingRef.current = false;
     };
-  }, [folder, prefix, padding, ext, maxFrames, isMobile]);
+  }, [startLoading]);
 
   const fitMode = fit;
 
@@ -270,7 +325,8 @@ export default function HeroAnimation({
     if (!canvas || !container) return;
 
     const ctx = canvas.getContext("2d");
-    const duration = frameDuration;
+    const cfg = configRef.current;
+    const duration = cfg.frameDuration;
 
     function resize() {
       const rect = container.getBoundingClientRect();
@@ -391,7 +447,10 @@ export default function HeroAnimation({
       if (io) io.disconnect();
       if (raf) cancelAnimationFrame(raf);
     };
-  }, [ready, frameDuration, drawFrame, fitMode]);
+  }, [ready, drawFrame, fitMode]);
+
+  const expected = configRef.current.maxFrames;
+  const source = isMobile ? "mobile" : "desktop";
 
   if (!chrome) {
     return (
@@ -407,7 +466,7 @@ export default function HeroAnimation({
             className="block w-full h-full"
             data-source={source}
             data-ready={ready ? "1" : "0"}
-            data-total={total}
+            data-total={loaded}
           />
           {!ready && (
             <div className="absolute inset-0 flex items-center justify-center bg-paper">
@@ -463,7 +522,7 @@ export default function HeroAnimation({
                 className="block w-full h-full"
                 data-source={source}
                 data-ready={ready ? "1" : "0"}
-                data-total={total}
+                data-total={loaded}
               />
 
               {!ready && (

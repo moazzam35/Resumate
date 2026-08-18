@@ -313,7 +313,7 @@ export default function Navbar() {
                     href={link.href}
                     onClick={(e) => scrollToHash(e, link.href)}
                     className={cn(
-                      "block px-3 py-2 text-xs font-medium rounded-md transition-colors",
+                      "block px-3 py-3 text-xs font-medium rounded-md transition-colors min-h-[44px] flex items-center",
                       isLinkActive(link)
                         ? "bg-primary text-primary-foreground"
                         : "text-muted hover:text-ink hover:bg-paper-alt/60"
