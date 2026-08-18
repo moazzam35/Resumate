@@ -130,6 +130,7 @@ export default function CoverLetterPage({ id }) {
         data: {
           name: formData.name || user?.name || "Applicant",
           position: formData.position,
+          targetJobTitle: formData.position,
           company: formData.company,
           jobDescription: formData.jobDescription,
           skills: "",

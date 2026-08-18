@@ -89,8 +89,12 @@ function compileResumeContent(resume) {
  * @param {string} jobDescription
  * @returns {string}
  */
-function buildJobMatchPrompt(resumeContent, jobDescription) {
-  return `You are an expert career advisor and ATS specialist. Analyze how well the following resume matches the given job description.
+function buildJobMatchPrompt(resumeContent, jobDescription, targetJobTitle) {
+  const title = String(targetJobTitle || "").trim();
+  const titleBlock = title
+    ? `\nTarget Job Title:\n${title}\n\nThe target job title is the primary context for this match — evaluate the resume against the skills, technologies, and responsibilities this role typically requires.\n`
+    : "";
+  return `You are an expert career advisor and ATS specialist. Analyze how well the following resume matches the given job description.${titleBlock}
 
 Resume Content:
 ${resumeContent}
@@ -142,7 +146,7 @@ export async function POST(request) {
       return apiError("Invalid request body", 400);
     }
 
-    const { resumeId, resumeContent, jobDescription } = body;
+    const { resumeId, resumeContent, jobDescription, targetJobTitle } = body;
 
     if (!jobDescription || jobDescription.trim().length === 0) {
       return apiValidationError(
@@ -193,7 +197,7 @@ export async function POST(request) {
       return apiError("Resume content is empty. Please add content to your resume first.", 400);
     }
 
-    const prompt = buildJobMatchPrompt(content, jobDescription);
+    const prompt = buildJobMatchPrompt(content, jobDescription, targetJobTitle);
     const text = await callGroq(prompt);
 
     // Parse JSON from AI response

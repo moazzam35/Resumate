@@ -138,7 +138,7 @@ export function ExperienceStep({ resume, resumeId, onGenerateTool }) {
               variant="outline"
               leftIcon={Sparkles}
               className="flex-1 sm:flex-initial"
-              onClick={() => onGenerateTool?.("IMPROVE_EXPERIENCE")}
+              onClick={() => onGenerateTool?.("GENERATE_EXPERIENCE")}
             >
               Generate
             </Button>

@@ -71,7 +71,7 @@ export async function POST(request) {
     const body = await safeBody(request);
     if (!body) return apiError("Invalid request body", 400);
 
-    const { type, resumeContent, jobDescription, currentScore } = body;
+    const { type, resumeContent, jobDescription, currentScore, targetJobTitle } = body;
     const validation = validateRequired(body, ["type", "resumeContent"]);
     if (!validation.valid) {
       return apiValidationError(validation.missing, "Validation failed");
@@ -115,6 +115,7 @@ export async function POST(request) {
       original,
       resumeContent: content.substring(0, 6000),
       jobDescription: jd.substring(0, 3000),
+      targetJobTitle: String(targetJobTitle || ""),
       missingKeywords: ats.keywords.missing,
       missingSkills: ats.missingSkills,
       currentScore: Number(currentScore) || ats.score,

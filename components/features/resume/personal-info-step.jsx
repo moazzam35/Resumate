@@ -42,7 +42,7 @@ export function PersonalInfoStep({ resume, resumeId, onGenerateTool }) {
       email: pi.email ?? resume?.email ?? "",
       phone: pi.phone ?? resume?.phone ?? "",
       location: pi.location ?? resume?.location ?? "",
-      title: pi.title ?? resume?.title ?? "",
+      title: pi.title ?? "",
       summary: resume?.summary ?? pi.summary ?? "",
       linkedin: pi.linkedin ?? resume?.linkedin ?? "",
       github: pi.github ?? resume?.github ?? "",

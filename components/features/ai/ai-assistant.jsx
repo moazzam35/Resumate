@@ -41,6 +41,7 @@ import { lookupJobLocally } from "@/lib/job-data";
 
 const AI_TOOLS = [
   { id: "SUMMARY", label: "Generate Summary", icon: Sparkles, description: "Create a professional summary" },
+  { id: "GENERATE_EXPERIENCE", label: "Generate Experience", icon: Briefcase, description: "Create a new work experience entry" },
   { id: "IMPROVE_EXPERIENCE", label: "Improve Experience", icon: Briefcase, description: "Enhance work descriptions" },
   { id: "REWRITE_BULLETS", label: "Rewrite Bullets", icon: ListChecks, description: "Make bullet points stronger" },
   { id: "GENERATE_SKILLS", label: "Generate Skills", icon: Wrench, description: "Suggest relevant skills" },
@@ -91,9 +92,9 @@ function resultBlocks(result, toolType) {
 
   if (typeof result === "object") {
     const blocks = [];
-    if (toolType === "IMPROVE_EXPERIENCE") {
+    if (toolType === "IMPROVE_EXPERIENCE" || toolType === "GENERATE_EXPERIENCE") {
       if (cleanItem(result.description)) {
-        blocks.push({ kind: "heading", text: "Improved description" }, { kind: "text", text: cleanItem(result.description) });
+        blocks.push({ kind: "heading", text: toolType === "GENERATE_EXPERIENCE" ? "Description" : "Improved description" }, { kind: "text", text: cleanItem(result.description) });
       }
       if (Array.isArray(result.highlights) && result.highlights.length) {
         blocks.push({ kind: "heading", text: "Highlights" }, { kind: "bullets", items: result.highlights.map(cleanItem).filter(Boolean) });
@@ -257,6 +258,17 @@ export function AIAssistant({ resumeId, resume, onApplyResult, request, onReques
     if (!request) return;
     setSelectedTool(request.tool || null);
     setIsOpen(true);
+    if (request.tool === "GENERATE_EXPERIENCE") {
+      const targetJobTitle = resume?.personalInfo?.title || resume?.personalInfo?.jobTitle || "";
+      setInputData((prev) => ({
+        ...prev,
+        position: prev.position || targetJobTitle,
+        company: prev.company || "",
+        startDate: prev.startDate || "",
+        endDate: prev.endDate || "",
+        description: prev.description || "",
+      }));
+    }
     onRequestHandled?.();
   }, [request, onRequestHandled, setIsOpen]);
 
@@ -270,10 +282,15 @@ export function AIAssistant({ resumeId, resume, onApplyResult, request, onReques
     setResult(null);
 
     try {
-      const jobData = lookupJobLocally(resume?.title || "");
+      // The job title (stored in personalInfo.title) is the primary context for
+      // every AI generation request — the resume's own title is just its name
+      // (e.g. "Untitled Resume") and must NOT be used as the target role.
+      const targetJobTitle = resume?.personalInfo?.title || resume?.personalInfo?.jobTitle || "";
+      const jobData = lookupJobLocally(targetJobTitle);
       const data = {
         ...inputData,
-        title: resume?.title,
+        targetJobTitle,
+        title: targetJobTitle,
         skills: resume?.skills?.map((s) => s.name).join(", "),
         experience: resume?.experiences?.map((e) => `${e.position} at ${e.company}: ${e.description}`).join("\n"),
         ...(jobData
@@ -311,6 +328,20 @@ export function AIAssistant({ resumeId, resume, onApplyResult, request, onReques
 
   const handleSelectTool = (toolId) => {
     setSelectedTool(toolId === selectedTool ? null : toolId);
+    if (toolId === "GENERATE_EXPERIENCE") {
+      // Fresh entry: default position to the resume's target job title.
+      const targetJobTitle = resume?.personalInfo?.title || resume?.personalInfo?.jobTitle || "";
+      setTargetExperienceId(null);
+      setInputData((prev) => ({
+        ...prev,
+        position: prev.position || targetJobTitle,
+        company: prev.company || "",
+        startDate: prev.startDate || "",
+        endDate: prev.endDate || "",
+        description: prev.description || "",
+      }));
+      return;
+    }
     if (toolId === "IMPROVE_EXPERIENCE" || toolId === "REWRITE_BULLETS") {
       const firstExp = resume?.experiences?.[0];
       if (firstExp) {
@@ -459,6 +490,71 @@ export function AIAssistant({ resumeId, resume, onApplyResult, request, onReques
                     </div>
                   )}
 
+                  {selectedTool === "GENERATE_EXPERIENCE" && (
+                    <div className="space-y-3">
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <div className="space-y-1">
+                          <Label htmlFor="gen-exp-company">Company</Label>
+                          <Input
+                            id="gen-exp-company"
+                            placeholder="Google"
+                            value={inputData.company || ""}
+                            onChange={(e) =>
+                              setInputData((prev) => ({ ...prev, company: e.target.value }))
+                            }
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label htmlFor="gen-exp-position">Position</Label>
+                          <Input
+                            id="gen-exp-position"
+                            placeholder="Software Engineer"
+                            value={inputData.position || ""}
+                            onChange={(e) =>
+                              setInputData((prev) => ({ ...prev, position: e.target.value }))
+                            }
+                          />
+                        </div>
+                      </div>
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <div className="space-y-1">
+                          <Label htmlFor="gen-exp-start">Start Date</Label>
+                          <Input
+                            id="gen-exp-start"
+                            type="date"
+                            value={inputData.startDate || ""}
+                            onChange={(e) =>
+                              setInputData((prev) => ({ ...prev, startDate: e.target.value }))
+                            }
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label htmlFor="gen-exp-end">End Date</Label>
+                          <Input
+                            id="gen-exp-end"
+                            type="date"
+                            value={inputData.endDate || ""}
+                            onChange={(e) =>
+                              setInputData((prev) => ({ ...prev, endDate: e.target.value }))
+                            }
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <Label htmlFor="gen-exp-notes">What did you do? (optional)</Label>
+                        <Textarea
+                          id="gen-exp-notes"
+                          placeholder="Describe your responsibilities, tools, and any results — the AI will turn this into polished resume bullets."
+                          rows={4}
+                          value={inputData.description || ""}
+                          onChange={(e) =>
+                            setInputData((prev) => ({ ...prev, description: e.target.value }))
+                          }
+                        />
+                      </div>
+                    </div>
+                  )}
+
                   {selectedTool === "COVER_LETTER" && (
                     <div className="space-y-3">
                       <div className="grid gap-3 sm:grid-cols-2">
@@ -548,7 +644,7 @@ export function AIAssistant({ resumeId, resume, onApplyResult, request, onReques
               {onApplyResult && (
                 <Button
                   onClick={() => {
-                    onApplyResult(result, selectedTool, targetExperienceId);
+                    onApplyResult(result, selectedTool, targetExperienceId, inputData);
                     setIsOpen(false);
                     setResult(null);
                     setSelectedTool(null);

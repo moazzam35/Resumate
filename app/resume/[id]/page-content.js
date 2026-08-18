@@ -378,10 +378,44 @@ export default function ResumeEditorPage() {
     setCurrentStep(0);
   }, []);
 
-  const handleApplyResult = useCallback(async (result, toolType, targetExperienceId) => {
+  const handleApplyResult = useCallback(async (result, toolType, targetExperienceId, inputData) => {
     if (!resumeId || !result) return;
 
     try {
+      if (toolType === "GENERATE_EXPERIENCE") {
+        const description = typeof result === "string" ? result : result.description || "";
+        const highlights = Array.isArray(result?.highlights)
+          ? result.highlights.filter(Boolean)
+          : Array.isArray(result)
+            ? result.filter((b) => typeof b === "string" && b.trim())
+            : [];
+        const company = (inputData?.company || "").trim();
+        const position = (inputData?.position || "").trim();
+        const startDate = inputData?.startDate || "";
+        if (!company || !position) {
+          showToast({ message: "Company and position are required to add this experience", type: "error" });
+          return;
+        }
+        if (!startDate) {
+          showToast({ message: "A start date is required to add this experience", type: "error" });
+          return;
+        }
+        const payload = {
+          company,
+          position,
+          location: inputData?.location || "",
+          startDate,
+          endDate: inputData?.endDate || undefined,
+          description,
+          highlights,
+        };
+        await post(`/resumes/${resumeId}/experiences`, payload);
+        const data = await get(`/resumes/${resumeId}`);
+        setCurrentResume(data.resume);
+        showToast({ message: "Experience added to resume", type: "success" });
+        return;
+      }
+
       if (toolType === "SUMMARY") {
         const summary = typeof result === "string" ? result : result.summary || result.text || "";
         if (!summary || !summary.trim()) {

@@ -24,6 +24,9 @@ function compileResumeContent(resume) {
   const parts = [];
 
   if (resume.title) parts.push(`Resume Title: ${resume.title}`);
+  if (resume.personalInfo?.title) {
+    parts.push(`Target Job Title: ${resume.personalInfo.title}`);
+  }
   if (resume.summary) parts.push(`\nProfessional Summary:\n${resume.summary}`);
 
   if (resume.experiences?.length > 0) {
@@ -117,7 +120,7 @@ export async function POST(request) {
       return apiError("Invalid request body", 400);
     }
 
-    const { resumeId, resumeContent, jobDescription } = body;
+    const { resumeId, resumeContent, jobDescription, targetJobTitle } = body;
 
     // Must provide resumeContent (resumeId requires auth)
     if (!resumeContent && !resumeId) {
@@ -128,6 +131,7 @@ export async function POST(request) {
     }
 
     let content = resumeContent;
+    let resolvedJobTitle = String(targetJobTitle || "").trim();
 
     if (resumeId && !resumeContent) {
       if (!userId) {
@@ -154,6 +158,13 @@ export async function POST(request) {
       }
 
       content = compileResumeContent(resume);
+      if (!resolvedJobTitle) {
+        resolvedJobTitle = resume?.personalInfo?.title || resume?.personalInfo?.jobTitle || "";
+      }
+    }
+
+    if (!resolvedJobTitle && typeof targetJobTitle === "string") {
+      resolvedJobTitle = targetJobTitle.trim();
     }
 
     if (!content || content.trim().length === 0) {
@@ -169,6 +180,7 @@ export async function POST(request) {
       ai = await generateAIContent("ATS_ANALYSIS", {
         resumeContent: content.substring(0, 6000),
         jobDescription: (jobDescription || "").substring(0, 3000),
+        targetJobTitle: resolvedJobTitle,
         score: ats.score,
         missingKeywords: ats.keywords.missing,
         missingSkills: ats.missingSkills,
@@ -250,7 +262,7 @@ export async function POST(request) {
           userId,
           resumeId: resumeId || null,
           type: "ATS_KEYWORDS",
-          input: JSON.stringify({ resumeContent: content.substring(0, 2000), jobDescription }),
+          input: JSON.stringify({ resumeContent: content.substring(0, 2000), jobDescription, targetJobTitle: resolvedJobTitle }),
           output: JSON.stringify({
             score: ats.score,
             matchPercentage: ats.matchPercentage,

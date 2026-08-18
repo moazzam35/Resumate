@@ -18,6 +18,8 @@ import {
 import PageHeader from "@/components/shared/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useSubscription } from "@/hooks";
 import { UpgradePromptModal } from "@/components/features/billing/upgrade-prompt-modal";
@@ -38,6 +40,7 @@ const itemVariants = {
 
 export default function JobMatchPage() {
   const [jobDescription, setJobDescription] = useState("");
+  const [targetJobTitle, setTargetJobTitle] = useState("");
   const [resumeContent, setResumeContent] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [results, setResults] = useState(null);
@@ -135,7 +138,7 @@ export default function JobMatchPage() {
           "Content-Type": "application/json",
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify({ resumeContent, jobDescription }),
+        body: JSON.stringify({ resumeContent, jobDescription, targetJobTitle: targetJobTitle.trim() || undefined }),
       });
       const data = await res.json();
       if (data.success) {
@@ -179,7 +182,18 @@ export default function JobMatchPage() {
               Job Description
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Target Job Title (optional)</Label>
+              <Input
+                placeholder="e.g. Full Stack Developer"
+                value={targetJobTitle}
+                onChange={(e) => setTargetJobTitle(e.target.value)}
+              />
+              <p className="text-xs text-muted">
+                Used to tailor the match analysis to the specific role.
+              </p>
+            </div>
             <Textarea
               placeholder="Paste the job description here..."
               className="min-h-[280px] resize-none rounded-md border-border transition-all focus:border-stamp/50 focus:ring-stamp/20"
